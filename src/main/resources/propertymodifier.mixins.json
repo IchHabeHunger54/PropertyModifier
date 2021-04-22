@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "package": "ihh.propertymodifier.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "propertymodifier.refmap.json",
+  "mixins": [
+    "MixinAbstractBlockState",
+    "MixinArmorItem",
+    "MixinAxeItem",
+    "MixinBlock",
+    "MixinBlockState",
+    "MixinEnchantment",
+    "MixinForgeHooks",
+    "MixinItem",
+    "MixinPickaxeItem",
+    "MixinTieredItem"
+  ],
+  "minVersion": "0.8"
+}
