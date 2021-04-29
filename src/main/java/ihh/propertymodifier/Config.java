@@ -8,6 +8,7 @@ import net.minecraft.block.ComposterBlock;
 import net.minecraft.block.SoundType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentType;
 import net.minecraft.entity.ai.attributes.Attribute;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.ai.attributes.Attributes;
@@ -17,7 +18,6 @@ import net.minecraft.item.HoeItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.item.Rarity;
 import net.minecraft.item.ShovelItem;
 import net.minecraft.item.SwordItem;
@@ -35,6 +35,7 @@ import org.antlr.v4.runtime.misc.Triple;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,6 +50,7 @@ public final class Config {
     private static final LinkedHashMap<Block, Properties.Block> BLOCKS = new LinkedHashMap<>();
     private static final LinkedHashMap<Item, Properties.Item> ITEMS = new LinkedHashMap<>();
     private static final LinkedHashMap<Enchantment, Properties.Enchantment> ENCHANTMENTS = new LinkedHashMap<>();
+    private static final LinkedHashMap<ItemGroup, ArrayList<EnchantmentType>> ENCHANTMENT_GROUPS = new LinkedHashMap<>();
     public static final HashMap<Block, Float> MIXIN_HARDNESS = new HashMap<>();
     public static final HashMap<Block, Integer> MIXIN_HARVEST_LEVEL = new HashMap<>();
     public static final HashMap<Block, ToolType> MIXIN_HARVEST_TOOL = new HashMap<>();
@@ -93,14 +95,16 @@ public final class Config {
     private static ForgeConfigSpec.ConfigValue<List<String>> ATTACK_DAMAGE;
     private static ForgeConfigSpec.ConfigValue<List<String>> ATTACK_SPEED;
     private static ForgeConfigSpec.ConfigValue<List<String>> EFFICIENCY;
-    private static ForgeConfigSpec.ConfigValue<List<String>> MAX_LEVEL;
-    private static ForgeConfigSpec.ConfigValue<List<String>> MIN_ENCHANTABILITY;
-    private static ForgeConfigSpec.ConfigValue<List<String>> MAX_ENCHANTABILITY;
-    private static ForgeConfigSpec.ConfigValue<List<String>> IS_TREASURE;
-    private static ForgeConfigSpec.ConfigValue<List<String>> CAN_VILLAGER_TRADE;
-    private static ForgeConfigSpec.ConfigValue<List<String>> CAN_GENERATE_IN_LOOT;
+//    private static ForgeConfigSpec.ConfigValue<List<String>> MAX_LEVEL;
+//    private static ForgeConfigSpec.ConfigValue<List<String>> MIN_ENCHANTABILITY;
+//    private static ForgeConfigSpec.ConfigValue<List<String>> MAX_ENCHANTABILITY;
+//    private static ForgeConfigSpec.ConfigValue<List<String>> IS_TREASURE;
+//    private static ForgeConfigSpec.ConfigValue<List<String>> CAN_VILLAGER_TRADE;
+//    private static ForgeConfigSpec.ConfigValue<List<String>> CAN_GENERATE_IN_LOOT;
     private static ForgeConfigSpec.ConfigValue<List<String>> ENCHANTMENT_RARITY;
-    private static ForgeConfigSpec.ConfigValue<List<String>> CAN_COMBINE;
+    //    private static ForgeConfigSpec.ConfigValue<List<String>> CAN_COMBINE;
+    private static ForgeConfigSpec.ConfigValue<List<String>> ENCHANTMENT_ITEM_GROUP;
+    private static ForgeConfigSpec.BooleanValue REMOVE_ENCHANTMENT_ITEM_GROUPS;
     private static ForgeConfigSpec.ConfigValue<List<String>> COMPOSTER_INPUTS;
     static ForgeConfigSpec.BooleanValue COMPOSTER_CLEAR;
     private static ForgeConfigSpec.ConfigValue<List<String>> AXE_BLOCKS;
@@ -153,14 +157,16 @@ public final class Config {
         builder.pop();
         builder.pop();
         builder.comment("Settings related to enchantments. Format is always \"enchantment;value\", with enchantment being in the format \"modid:enchantmentid\", unless stated otherwise. Alternatively, you can use \"any\" to apply the setting to all enchantments (usable e.g. to make all enchantments have the same rarity.) Note that entries are read from left to right, so you should put \"any\"-entries at the start, as they will overwrite anything stated before them. NONE OF THESE WORK! (except for rarity, rarity works)").push("enchantments");
-        MAX_LEVEL = builder.comment("Sets the max enchantment level.").define("max_level", new ArrayList<>());
-        MIN_ENCHANTABILITY = builder.comment("Sets the min enchantability required for this enchantment. Format is \"enchantment;constant;variable\". Calculation is performed as follows: constant + enchantmentlevel * variable. Vanilla values are:", "\"minecraft:aqua_affinity;1;0\", \"minecraft:bane_of_arthropods;-3;8\", \"minecraft:binding_curse;25;0\", \"minecraft:blast_protection;-3;8\", \"minecraft:channeling;20;0\", \"minecraft:depth_strider;0;10\", \"minecraft:efficiency;-9;10\", \"minecraft:feather_falling;-1;6\", \"minecraft:fire_aspect;-10;20\", \"minecraft:fire_protection;2;8\", \"minecraft:flame;20;0\", \"minecraft:fortune;6;9\", \"minecraft:frost_walker;0;10\", \"minecraft:impaling;-7;8\", \"minecraft:infinity;20;0\", \"minecraft:knockback;-15;20\", \"minecraft:looting;6;9\", \"minecraft:loyalty;5;7\", \"minecraft:luck_of_the_sea;6;9\", \"minecraft:lure;6;9\", \"minecraft:mending;0;25\", \"minecraft:multishot;20;0\", \"minecraft:piercing;-9;10\", \"minecraft:power;-9;10\", \"minecraft:projectile_protection;-3;6\", \"minecraft:protection;-10;11\", \"minecraft:punch;-8;20\", \"minecraft:quick_charge;-8;20\", \"minecraft:respiration;0;10\", \"minecraft:riptide;10;7\", \"minecraft:sharpness;-10;11\", \"minecraft:silk_touch;15;0\", \"minecraft:smite;-3;8\", \"minecraft:soul_speed;0;10\", \"minecraft:sweeping;-4;9\", \"minecraft:thorns;-10;20\", \"minecraft:unbreaking;-3;8\", \"minecraft:vanishing_curse;25;0\"").define("min_enchantability", new ArrayList<>());
-        MAX_ENCHANTABILITY = builder.comment("Sets the max enchantability required for this enchantment. Format is \"enchantment;constant;variable;add\". Calculation is performed as follows: constant + enchantmentlevel * variable. If \"add\" is set to true, this value will be added to the min enchantability of this enchantment, if set to false, this will not happen. Vanilla values are:", "\"minecraft:aqua_affinity;40;0;true\", \"minecraft:bane_of_arthropods;20;0;true\", \"minecraft:binding_curse;50;0;false\", \"minecraft:blast_protection;8;0;true\", \"minecraft:channeling;50;0;false\", \"minecraft:depth_strider;15;0;true\", \"minecraft:efficiency;50;0;true\", \"minecraft:feather_falling;6;0;true\", \"minecraft:fire_aspect;50;0;true\", \"minecraft:fire_protection;8;0;true\", \"minecraft:flame;50;0;false\", \"minecraft:fortune;50;0;true\", \"minecraft:frost_walker;15;0;true\", \"minecraft:impaling;20;0;true\", \"minecraft:infinity;50;0;false\", \"minecraft:knockback;50;0;true\", \"minecraft:looting;50;0;true\", \"minecraft:loyalty;50;0;false\", \"minecraft:luck_of_the_sea;50;0;true\", \"minecraft:lure;50;0;true\", \"minecraft:mending;50;0;true\", \"minecraft:multishot;50;0;false\", \"minecraft:piercing;50;0;false\", \"minecraft:power;15;0;true\", \"minecraft:projectile_protection;6;0;true\", \"minecraft:protection;11;0;true\", \"minecraft:punch;25;0;true\", \"minecraft:quick_charge;50;0;false\", \"minecraft:respiration;30;0;true\", \"minecraft:riptide;50;0;false\", \"minecraft:sharpness;20;0;true\", \"minecraft:silk_touch;50;0;true\", \"minecraft:smite;20;0;true\", \"minecraft:soul_speed;15;0;true\", \"minecraft:sweeping;15;0;true\", \"minecraft:thorns;50;0;true\", \"minecraft:unbreaking;50;0;true\", \"minecraft:vanishing_curse;50;0;false\"").define("max_enchantability", new ArrayList<>());
-        IS_TREASURE = builder.comment("Whether this item is considered a treasure enchantment or not. Is true for binding_curse, frost_walker, mending, soul_speed, vanishing_curse.").define("is_treasure", new ArrayList<>());
-        CAN_VILLAGER_TRADE = builder.comment("Whether this item can be traded from villagers. True for every vanilla enchantment except soul_speed.").define("can_villager_trade", new ArrayList<>());
-        CAN_GENERATE_IN_LOOT = builder.comment("Whether this item can generate from loot tables. True for every vanilla enchantment except soul_speed.").define("can_generate_in_loot", new ArrayList<>());
+//        MAX_LEVEL = builder.comment("Sets the max enchantment level.").define("max_level", new ArrayList<>());
+//        MIN_ENCHANTABILITY = builder.comment("Sets the min enchantability required for this enchantment. Format is \"enchantment;constant;variable\". Calculation is performed as follows: constant + enchantmentlevel * variable. Vanilla values are:", "\"minecraft:aqua_affinity;1;0\", \"minecraft:bane_of_arthropods;-3;8\", \"minecraft:binding_curse;25;0\", \"minecraft:blast_protection;-3;8\", \"minecraft:channeling;20;0\", \"minecraft:depth_strider;0;10\", \"minecraft:efficiency;-9;10\", \"minecraft:feather_falling;-1;6\", \"minecraft:fire_aspect;-10;20\", \"minecraft:fire_protection;2;8\", \"minecraft:flame;20;0\", \"minecraft:fortune;6;9\", \"minecraft:frost_walker;0;10\", \"minecraft:impaling;-7;8\", \"minecraft:infinity;20;0\", \"minecraft:knockback;-15;20\", \"minecraft:looting;6;9\", \"minecraft:loyalty;5;7\", \"minecraft:luck_of_the_sea;6;9\", \"minecraft:lure;6;9\", \"minecraft:mending;0;25\", \"minecraft:multishot;20;0\", \"minecraft:piercing;-9;10\", \"minecraft:power;-9;10\", \"minecraft:projectile_protection;-3;6\", \"minecraft:protection;-10;11\", \"minecraft:punch;-8;20\", \"minecraft:quick_charge;-8;20\", \"minecraft:respiration;0;10\", \"minecraft:riptide;10;7\", \"minecraft:sharpness;-10;11\", \"minecraft:silk_touch;15;0\", \"minecraft:smite;-3;8\", \"minecraft:soul_speed;0;10\", \"minecraft:sweeping;-4;9\", \"minecraft:thorns;-10;20\", \"minecraft:unbreaking;-3;8\", \"minecraft:vanishing_curse;25;0\"").define("min_enchantability", new ArrayList<>());
+//        MAX_ENCHANTABILITY = builder.comment("Sets the max enchantability required for this enchantment. Format is \"enchantment;constant;variable;add\". Calculation is performed as follows: constant + enchantmentlevel * variable. If \"add\" is set to true, this value will be added to the min enchantability of this enchantment, if set to false, this will not happen. Vanilla values are:", "\"minecraft:aqua_affinity;40;0;true\", \"minecraft:bane_of_arthropods;20;0;true\", \"minecraft:binding_curse;50;0;false\", \"minecraft:blast_protection;8;0;true\", \"minecraft:channeling;50;0;false\", \"minecraft:depth_strider;15;0;true\", \"minecraft:efficiency;50;0;true\", \"minecraft:feather_falling;6;0;true\", \"minecraft:fire_aspect;50;0;true\", \"minecraft:fire_protection;8;0;true\", \"minecraft:flame;50;0;false\", \"minecraft:fortune;50;0;true\", \"minecraft:frost_walker;15;0;true\", \"minecraft:impaling;20;0;true\", \"minecraft:infinity;50;0;false\", \"minecraft:knockback;50;0;true\", \"minecraft:looting;50;0;true\", \"minecraft:loyalty;50;0;false\", \"minecraft:luck_of_the_sea;50;0;true\", \"minecraft:lure;50;0;true\", \"minecraft:mending;50;0;true\", \"minecraft:multishot;50;0;false\", \"minecraft:piercing;50;0;false\", \"minecraft:power;15;0;true\", \"minecraft:projectile_protection;6;0;true\", \"minecraft:protection;11;0;true\", \"minecraft:punch;25;0;true\", \"minecraft:quick_charge;50;0;false\", \"minecraft:respiration;30;0;true\", \"minecraft:riptide;50;0;false\", \"minecraft:sharpness;20;0;true\", \"minecraft:silk_touch;50;0;true\", \"minecraft:smite;20;0;true\", \"minecraft:soul_speed;15;0;true\", \"minecraft:sweeping;15;0;true\", \"minecraft:thorns;50;0;true\", \"minecraft:unbreaking;50;0;true\", \"minecraft:vanishing_curse;50;0;false\"").define("max_enchantability", new ArrayList<>());
+//        IS_TREASURE = builder.comment("Whether this item is considered a treasure enchantment or not. Is true for binding_curse, frost_walker, mending, soul_speed, vanishing_curse.").define("is_treasure", new ArrayList<>());
+//        CAN_VILLAGER_TRADE = builder.comment("Whether this item can be traded from villagers. True for every vanilla enchantment except soul_speed.").define("can_villager_trade", new ArrayList<>());
+//        CAN_GENERATE_IN_LOOT = builder.comment("Whether this item can generate from loot tables. True for every vanilla enchantment except soul_speed.").define("can_generate_in_loot", new ArrayList<>());
         ENCHANTMENT_RARITY = builder.comment("The enchantment rarity of this enchantment. Can take the following values: common (10), uncommon (5), rare (2) and very_rare (1). Vanilla values are:", "\"minecraft:aqua_affinity;rare\", \"minecraft:bane_of_arthropods;uncommon\", \"minecraft:binding_curse;very_rare\", \"minecraft:blast_protection;rare\", \"minecraft:channeling;very_rare\", \"minecraft:depth_strider;rare\", \"minecraft:efficiency;common\", \"minecraft:feather_falling;uncommon\", \"minecraft:fire_aspect;rare\", \"minecraft:fire_protection;uncommon\", \"minecraft:flame;rare\", \"minecraft:fortune;rare\", \"minecraft:frost_walker;rare\", \"minecraft:impaling;rare\", \"minecraft:infinity;very_rare\", \"minecraft:knockback;uncommon\", \"minecraft:looting;rare\", \"minecraft:loyalty;uncommon\", \"minecraft:luck_of_the_sea;rare\", \"minecraft:lure;rare\", \"minecraft:mending;rare\", \"minecraft:multishot;rare\", \"minecraft:piercing;common\", \"minecraft:power;common\", \"minecraft:projectile_protection;uncommon\", \"minecraft:protection;common\", \"minecraft:punch;rare\", \"minecraft:quick_charge;rare\", \"minecraft:respiration;rare\", \"minecraft:riptide;rare\", \"minecraft:sharpness;common\", \"minecraft:silk_touch;very_rare\", \"minecraft:smite;uncommon\", \"minecraft:soul_speed;very_rare\", \"minecraft:sweeping;rare\", \"minecraft:thorns;very_rare\", \"minecraft:unbreaking;uncommon\", \"minecraft:vanishing_curse;very_rare\"").define("rarity", new ArrayList<>());
-        CAN_COMBINE = builder.comment("Two enchantments that cannot be on the same item. Does not need to be set by both sides (e.g. by frost walker AND by depth strider), but it's recommended. Once you overwrite it for an enchantment, all previously existing restrictions will be removed, and you must re-add them if you still want them. Vanilla values are:", "\"minecraft:bane_of_arthropods;minecraft:sharpness\", \"minecraft:bane_of_arthropods;minecraft:smite\", \"minecraft:sharpness;minecraft:bane_of_arthropods\", \"minecraft:sharpness;minecraft:smite\", \"minecraft:smite;minecraft:bane_of_arthropods\", \"minecraft:smite;minecraft:sharpness\", \"minecraft:blast_protection;minecraft:fire_protection\", \"minecraft:blast_protection;minecraft:projectile_protection\", \"minecraft:blast_protection;minecraft:protection\", \"minecraft:fire_protection;minecraft:blast_protection\", \"minecraft:fire_protection;minecraft:projectile_protection\", \"minecraft:fire_protection;minecraft:protection\", \"minecraft:projectile_protection;minecraft:blast_protection\", \"minecraft:projectile_protection;minecraft:fire_protection\", \"minecraft:projectile_protection;minecraft:protection\", \"minecraft:protection;minecraft:blast_protection\", \"minecraft:protection;minecraft:fire_protection\", \"minecraft:protection;minecraft:projectile_protection\", \"minecraft:channeling;minecraft:riptide\", \"minecraft:loyalty;minecraft:riptide\", \"minecraft:riptide;minecraft:channeling\", \"minecraft:riptide;minecraft:loyalty\", \"minecraft:depth_strider;minecraft:frost_walker\", \"minecraft:frost_walker;minecraft:depth_strider\", \"minecraft:fortune;minecraft:silk_touch\", \"minecraft:silk_touch;minecraft:fortune\", \"minecraft:infinity;minecraft:mending\", \"minecraft:mending;minecraft:infinity\", \"minecraft:multishot;minecraft:piercing\", \"minecraft:piercing;minecraft:multishot\"").define("can_combine", new ArrayList<>());
+//        CAN_COMBINE = builder.comment("Two enchantments that cannot be on the same item. Does not need to be set by both sides (e.g. by frost walker AND by depth strider), but it's recommended. Once you overwrite it for an enchantment, all previously existing restrictions will be removed, and you must re-add them if you still want them. Vanilla values are:", "\"minecraft:bane_of_arthropods;minecraft:sharpness\", \"minecraft:bane_of_arthropods;minecraft:smite\", \"minecraft:sharpness;minecraft:bane_of_arthropods\", \"minecraft:sharpness;minecraft:smite\", \"minecraft:smite;minecraft:bane_of_arthropods\", \"minecraft:smite;minecraft:sharpness\", \"minecraft:blast_protection;minecraft:fire_protection\", \"minecraft:blast_protection;minecraft:projectile_protection\", \"minecraft:blast_protection;minecraft:protection\", \"minecraft:fire_protection;minecraft:blast_protection\", \"minecraft:fire_protection;minecraft:projectile_protection\", \"minecraft:fire_protection;minecraft:protection\", \"minecraft:projectile_protection;minecraft:blast_protection\", \"minecraft:projectile_protection;minecraft:fire_protection\", \"minecraft:projectile_protection;minecraft:protection\", \"minecraft:protection;minecraft:blast_protection\", \"minecraft:protection;minecraft:fire_protection\", \"minecraft:protection;minecraft:projectile_protection\", \"minecraft:channeling;minecraft:riptide\", \"minecraft:loyalty;minecraft:riptide\", \"minecraft:riptide;minecraft:channeling\", \"minecraft:riptide;minecraft:loyalty\", \"minecraft:depth_strider;minecraft:frost_walker\", \"minecraft:frost_walker;minecraft:depth_strider\", \"minecraft:fortune;minecraft:silk_touch\", \"minecraft:silk_touch;minecraft:fortune\", \"minecraft:infinity;minecraft:mending\", \"minecraft:mending;minecraft:infinity\", \"minecraft:multishot;minecraft:piercing\", \"minecraft:piercing;minecraft:multishot\"").define("can_combine", new ArrayList<>());
+        ENCHANTMENT_ITEM_GROUP = builder.comment("The item group this enchantment type's enchanted books are in. As soon as you add one for an item group, you need to re-add every enchantment type for that group as well. Default values are: \"armor;combat\", \"armor_feet;combat\", \"armor_legs;combat\", \"armor_chest;combat\", \"armor_head;combat\", \"bow;combat\", \"weapon;combat\", \"wearable;combat\", \"breakable;combat\", \"trident;combat\", \"crossbow;combat\", \"digger;tools\", \"fishing_rod;tools\", \"vanishable;tools\", \"breakable;tools\"").define("group", new ArrayList<>());
+        REMOVE_ENCHANTMENT_ITEM_GROUPS = builder.comment("Remove enchantment books from creative tabs. Runs before \"group\", so re-adding is possible.").define("remove_item_groups", false);
         builder.pop();
         builder.push("composter");
         COMPOSTER_INPUTS = builder.comment("Define additional composter inputs here. Format is \"itemid;chance\", with item id being in the modid:itemid format and chance being a precentage between 0.0 and 1.0. Vanilla values are:", "\"minecraft:oak_leaves;0.3\", \"minecraft:spruce_leaves;0.3\", \"minecraft:birch_leaves;0.3\", \"minecraft:jungle_leaves;0.3\", \"minecraft:acacia_leaves;0.3\", \"minecraft:dark_oak_leaves;0.3\", \"minecraft:oak_sapling;0.3\", \"minecraft:spruce_sapling;0.3\", \"minecraft:birch_sapling;0.3\", \"minecraft:jungle_sapling;0.3\", \"minecraft:acacia_sapling;0.3\", \"minecraft:dark_oak_sapling;0.3\", \"minecraft:beetroot_seeds;0.3\", \"minecraft:dried_kelp;0.3\", \"minecraft:grass;0.3\", \"minecraft:kelp;0.3\", \"minecraft:melon_seeds;0.3\", \"minecraft:pumpkin_seeds;0.3\", \"minecraft:seagrass;0.3\", \"minecraft:sweet_berries;0.3\", \"minecraft:wheat_seeds;0.3\", \"minecraft:cactus;0.5\", \"minecraft:dried_kelp_block;0.5\", \"minecraft:melon_slice;0.5\", \"minecraft:nether_sprouts;0.5\", \"minecraft:sugar_cane;0.5\", \"minecraft:tall_grass;0.5\", \"minecraft:twisted_vines;0.5\", \"minecraft:vine;0.5\", \"minecraft:weeping_vines;0.5\", \"minecraft:crimson_roots;0.65\", \"minecraft:warped_roots;0.65\", \"minecraft:crimson_fungus;0.65\", \"minecraft:warped_fungus;0.65\", \"minecraft:brown_mushroom;0.65\", \"minecraft:red_mushroom;0.65\", \"minecraft:mushroom_stem;0.65\", \"minecraft:dandelion;0.65\", \"minecraft:poppy;0.65\", \"minecraft:orange_tulip;0.65\", \"minecraft:pink_tulip;0.65\", \"minecraft:red_tulip;0.65\", \"minecraft:white_tulip;0.65\", \"minecraft:allium;0.65\", \"minecraft:azure_bluet;0.65\", \"minecraft:blue_orchid;0.65\", \"minecraft:oxeye_daisy;0.65\", \"minecraft:cornflower;0.65\", \"minecraft:lily_of_the_valley;0.65\", \"minecraft:wither_rose;0.65\", \"minecraft:fern;0.65\", \"minecraft:large_fern;0.65\", \"minecraft:lilac;0.65\", \"minecraft:peony;0.65\", \"minecraft:rose_bush;0.65\", \"minecraft:sunflower;0.65\", \"minecraft:crimson_roots;0.65\", \"minecraft:warped_roots;0.65\", \"minecraft:wheat;0.65\", \"minecraft:potato;0.65\", \"minecraft:carrot;0.65\", \"minecraft:beetroot;0.65\", \"minecraft:apple;0.65\", \"minecraft:carved_pumpkin;0.65\", \"minecraft:cocoa_beans;0.65\", \"minecraft:lily_pad;0.65\", \"minecraft:melon;0.65\", \"minecraft:nether_wart;0.65\", \"minecraft:pumpkin;0.65\", \"minecraft:sea_pickle;0.65\", \"minecraft:shroomlight;0.65\", \"minecraft:brown_mushroom_block;0.85\", \"minecraft:red_mushroom_block;0.85\", \"minecraft:nether_wart_block;0.85\", \"minecraft:warped_wart_block;0.85\", \"minecraft:baked_potato;0.85\", \"minecraft:bread;0.85\", \"minecraft:cookie;0.85\", \"minecraft:hay_block;0.85\", \"minecraft:cake;1\", \"minecraft:pumpkin_pie;1\"").define("inputs", new ArrayList<>());
@@ -193,6 +199,9 @@ public final class Config {
         TIERED_REGISTRY.removeIf(e -> !(e instanceof TieredItem));
         TOOL_REGISTRY.removeIf(e -> !(e instanceof ToolItem));
         LinkedHashMap<String, ItemStack> m = new LinkedHashMap<>();
+        if (REMOVE_ENCHANTMENT_ITEM_GROUPS.get())
+            for (ItemGroup g : ItemGroup.GROUPS)
+                g.setRelevantEnchantmentTypes();
         for (String v : ITEM_GROUP.get()) {
             String[] s = v.split(";");
             Item i = fromRegistry(s[1], ITEM_REGISTRY);
@@ -327,46 +336,74 @@ public final class Config {
             ((Properties.Tool) prop).EFFICIENCY = entry.getValue();
             ITEMS.put(entry.getKey(), prop);
         }
+/*
         for (Map.Entry<Enchantment, Integer> entry : getMap(MAX_LEVEL, ENCHANTMENT_REGISTRY, Config::parseInt, e -> e > 0, "Max level must be at least 1").entrySet()) {
             Properties.Enchantment prop = ENCHANTMENTS.getOrDefault(entry.getKey(), new Properties.Enchantment());
             prop.MAX_LEVEL = entry.getValue();
             ENCHANTMENTS.put(entry.getKey(), prop);
         }
+*/
+/*
         for (Map.Entry<Enchantment, Pair<Integer, Integer>> entry : pairMap(MIN_ENCHANTABILITY, ENCHANTMENT_REGISTRY, Config::parseInt, e -> true, Config::parseInt, e -> true).entrySet()) {
             Properties.Enchantment prop = ENCHANTMENTS.getOrDefault(entry.getKey(), new Properties.Enchantment());
             prop.MIN_ENCHANTABILITY = entry.getValue();
             ENCHANTMENTS.put(entry.getKey(), prop);
         }
+*/
+/*
         for (Map.Entry<Enchantment, Triple<Integer, Integer, Boolean>> entry : tripleMap(MAX_ENCHANTABILITY, ENCHANTMENT_REGISTRY, Config::parseInt, e -> true, Config::parseInt, e -> true, Config::parseBoolean, e -> true).entrySet()) {
             Properties.Enchantment prop = ENCHANTMENTS.getOrDefault(entry.getKey(), new Properties.Enchantment());
             prop.MAX_ENCHANTABILITY = entry.getValue();
             ENCHANTMENTS.put(entry.getKey(), prop);
         }
+*/
+/*
         for (Map.Entry<Enchantment, Boolean> entry : getMap(IS_TREASURE, ENCHANTMENT_REGISTRY, Config::parseBoolean, e -> true, "").entrySet()) {
             Properties.Enchantment prop = ENCHANTMENTS.getOrDefault(entry.getKey(), new Properties.Enchantment());
             prop.IS_TREASURE = entry.getValue();
             ENCHANTMENTS.put(entry.getKey(), prop);
         }
+*/
+/*
         for (Map.Entry<Enchantment, Boolean> entry : getMap(CAN_VILLAGER_TRADE, ENCHANTMENT_REGISTRY, Config::parseBoolean, e -> true, "").entrySet()) {
             Properties.Enchantment prop = ENCHANTMENTS.getOrDefault(entry.getKey(), new Properties.Enchantment());
             prop.CAN_VILLAGER_TRADE = entry.getValue();
             ENCHANTMENTS.put(entry.getKey(), prop);
         }
+*/
+/*
         for (Map.Entry<Enchantment, Boolean> entry : getMap(CAN_GENERATE_IN_LOOT, ENCHANTMENT_REGISTRY, Config::parseBoolean, e -> true, "").entrySet()) {
             Properties.Enchantment prop = ENCHANTMENTS.getOrDefault(entry.getKey(), new Properties.Enchantment());
             prop.CAN_GENERATE_IN_LOOT = entry.getValue();
             ENCHANTMENTS.put(entry.getKey(), prop);
         }
+*/
         for (Map.Entry<Enchantment, Enchantment.Rarity> entry : getMap(ENCHANTMENT_RARITY, ENCHANTMENT_REGISTRY, Config::parseEnchantmentRarity, e -> true, "").entrySet()) {
             Properties.Enchantment prop = ENCHANTMENTS.getOrDefault(entry.getKey(), new Properties.Enchantment());
             prop.RARITY = entry.getValue();
             ENCHANTMENTS.put(entry.getKey(), prop);
         }
+/*
         for (Map.Entry<Enchantment, Enchantment> entry : getMap(CAN_COMBINE, ENCHANTMENT_REGISTRY, Config::parseEnchantment, e -> true, "").entrySet()) {
             Properties.Enchantment prop = ENCHANTMENTS.getOrDefault(entry.getKey(), new Properties.Enchantment());
             if (prop.INCOMPATIBLES == null) prop.INCOMPATIBLES = new HashSet<>();
             prop.INCOMPATIBLES.add(entry.getValue());
             ENCHANTMENTS.put(entry.getKey(), prop);
+        }
+*/
+        for (String v : ENCHANTMENT_ITEM_GROUP.get()) {
+            String[] s = v.split(";");
+            try {
+                EnchantmentType t = EnchantmentType.valueOf(s[0].toUpperCase());
+                ItemGroup g = parseItemGroup(s[1], v, getPath(ENCHANTMENT_ITEM_GROUP.getPath()), e -> true, "");
+                if (g != null) {
+                    ArrayList<EnchantmentType> l = ENCHANTMENT_GROUPS.getOrDefault(g, new ArrayList<>());
+                    l.add(t);
+                    ENCHANTMENT_GROUPS.put(g, l);
+                } else Logger.error(s[1] + " is not an item group (is invalid for entry " + v + " in enchantment.group)");
+            } catch (IllegalArgumentException e) {
+                Logger.error("Unknown enchantment type " + s[0]);
+            }
         }
         for (Block block : BLOCKS.keySet()) {
             Properties.Block prop = BLOCKS.get(block);
@@ -515,22 +552,36 @@ public final class Config {
                 ShovelItem.SHOVEL_LOOKUP.put(entry.getKey(), entry.getValue().getDefaultState());
         for (Map.Entry<Block, Block> entry : getMap(HOE_BLOCKS, BLOCK_REGISTRY, Config::parseBlock, e -> true, "").entrySet())
             if (entry.getValue() != null) HoeItem.HOE_LOOKUP.put(entry.getKey(), entry.getValue().getDefaultState());
-        for (Item item : ForgeRegistries.ITEMS) if (item.group != null && item.group.getPath().equals("none")) item.group = null;
+        for (Item item : ForgeRegistries.ITEMS)
+            if (item.group != null && item.group.getPath().equals("none")) item.group = null;
+        for (ItemGroup g : ENCHANTMENT_GROUPS.keySet())
+            g.setRelevantEnchantmentTypes(ENCHANTMENT_GROUPS.get(g).toArray(new EnchantmentType[0]));
         if (REMOVE_EMPTY_ITEM_GROUPS.get()) {
             ArrayList<ItemGroup> groups = Lists.newArrayList(ItemGroup.GROUPS);
             ArrayList<ItemGroup> result = Lists.newArrayList(ItemGroup.GROUPS);
             for (ItemGroup t : groups) {
-                if (t == ItemGroup.SEARCH || t == ItemGroup.HOTBAR || t == ItemGroup.INVENTORY) continue;
+                if (t == ItemGroup.SEARCH || t == ItemGroup.HOTBAR || t == ItemGroup.INVENTORY || t.getRelevantEnchantmentTypes().length > 0) continue;
                 boolean b = false;
-                if (t.getRelevantEnchantmentTypes().length > 0) b = true;
-                else for (Item item : ForgeRegistries.ITEMS)
+                for (Item item : ForgeRegistries.ITEMS)
                     if (item.group == t) {
                         b = true;
                         break;
                     }
                 if (!b) result.remove(t);
             }
-            ItemGroup.GROUPS = result.toArray(new ItemGroup[0]);
+            ItemGroup.GROUPS = new ItemGroup[0];
+            try {
+                Method d = ItemGroup.class.getDeclaredMethod("addGroupSafe", int.class, ItemGroup.class);
+                d.setAccessible(true);
+                for (int i = 0; i < result.size(); i++) {
+                    ItemGroup g = result.get(i);
+                    g.index = i;
+                    d.invoke(null, i, g);
+                }
+            } catch (Exception e) {
+                Logger.error("Could not remove empty item groups:");
+                e.printStackTrace();
+            }
         }
         if (searchReload) Minecraft.getInstance().populateSearchTreeManager();
     }
@@ -672,10 +723,6 @@ public final class Config {
         }
     }
 
-    private static LazyValue<Ingredient> parseRepairMaterial(String v, String e, String n, Predicate<LazyValue<Ingredient>> p, String m) {
-        return new LazyValue<>(() -> v.startsWith("#") ? Ingredient.fromTag(ItemTags.makeWrapperTag(v.substring(1))) : Ingredient.fromItems(fromRegistry(v, new ArrayList<>(ForgeRegistries.ITEMS.getValues()))));
-    }
-
     private static ItemGroup parseItemGroup(String v, String e, String n, Predicate<ItemGroup> p, String m) {
         ItemGroup g = null;
         for (ItemGroup i : ItemGroup.GROUPS) if (i.getPath().equals(v)) g = i;
@@ -690,6 +737,10 @@ public final class Config {
             Logger.error("Invalid rarity " + v + " (is invalid for " + e + " in " + n + ")");
             return null;
         }
+    }
+
+    private static LazyValue<Ingredient> parseRepairMaterial(String v, String e, String n, Predicate<LazyValue<Ingredient>> p, String m) {
+        return new LazyValue<>(() -> v.startsWith("#") ? Ingredient.fromTag(ItemTags.makeWrapperTag(v.substring(1))) : Ingredient.fromItems(fromRegistry(v, new ArrayList<>(ForgeRegistries.ITEMS.getValues()))));
     }
 
     private static SoundType parseSoundType(String v, String e, String n, Predicate<SoundType> p, String m) {
