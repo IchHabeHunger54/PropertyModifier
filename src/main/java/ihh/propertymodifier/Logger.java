@@ -2,6 +2,7 @@ package ihh.propertymodifier;
 
 import org.apache.logging.log4j.LogManager;
 
+@SuppressWarnings("unused")
 public final class Logger {
     private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger();
 
