@@ -9,10 +9,12 @@
     "MixinAxeItem",
     "MixinBlock",
     "MixinBlockState",
+    "MixinElytraItem",
     "MixinEnchantment",
     "MixinForgeHooks",
     "MixinItem",
     "MixinPickaxeItem",
+    "MixinShieldItem",
     "MixinTieredItem"
   ],
   "minVersion": "0.8"

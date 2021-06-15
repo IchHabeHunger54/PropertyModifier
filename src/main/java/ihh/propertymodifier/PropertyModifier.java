@@ -1,7 +1,10 @@
 package ihh.propertymodifier;
 
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
+import net.minecraft.tags.ITag;
+import net.minecraft.tags.ItemTags;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -21,6 +24,8 @@ public final class PropertyModifier {
             return ItemStack.EMPTY;
         }
     };
+    public static final ITag.INamedTag<Item> SHIELD_REPAIR_MATERIAL = ItemTags.makeWrapperTag("propertymodifier:shield_repair_material");
+    public static final ITag.INamedTag<Item> ELYTRA_REPAIR_MATERIAL = ItemTags.makeWrapperTag("propertymodifier:elytra_repair_material");
 
     public PropertyModifier() {
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);

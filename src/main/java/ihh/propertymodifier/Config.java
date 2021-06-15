@@ -170,7 +170,7 @@ public final class Config {
         EFFICIENCY = builder.comment("Sets the efficiency. Wood has 2, stone has 4, iron has 6, diamond has 8, netherite has 9, gold has 12. Does not work for swords.").define("efficiency", new ArrayList<>());
         builder.pop();
         builder.pop();
-        builder.comment("Settings related to enchantments. Format is always \"enchantment;value\", with enchantment being in the format \"modid:enchantmentid\", unless stated otherwise. Alternatively, you can use \"any\" to apply the setting to all enchantments (usable e.g. to make all enchantments have the same rarity.) Note that entries are read from left to right, so you should put \"any\"-entries at the start, as they will overwrite anything stated before them. NONE OF THESE WORK! (except for rarity, rarity works)").push("enchantments");
+        builder.comment("Settings related to enchantments. Format is always \"enchantment;value\", with enchantment being in the format \"modid:enchantmentid\", unless stated otherwise. Alternatively, you can use \"any\" to apply the setting to all enchantments (usable e.g. to make all enchantments have the same rarity.) Note that entries are read from left to right, so you should put \"any\"-entries at the start, as they will overwrite anything stated before them.").push("enchantments");
 /*
         MAX_LEVEL = builder.comment("Sets the max enchantment level.").define("max_level", new ArrayList<>());
         MIN_ENCHANTABILITY = builder.comment("Sets the min enchantability required for this enchantment. Format is \"enchantment;constant;variable\". Calculation is performed as follows: constant + enchantmentlevel * variable. Vanilla values are:", "\"minecraft:aqua_affinity;1;0\", \"minecraft:bane_of_arthropods;-3;8\", \"minecraft:binding_curse;25;0\", \"minecraft:blast_protection;-3;8\", \"minecraft:channeling;20;0\", \"minecraft:depth_strider;0;10\", \"minecraft:efficiency;-9;10\", \"minecraft:feather_falling;-1;6\", \"minecraft:fire_aspect;-10;20\", \"minecraft:fire_protection;2;8\", \"minecraft:flame;20;0\", \"minecraft:fortune;6;9\", \"minecraft:frost_walker;0;10\", \"minecraft:impaling;-7;8\", \"minecraft:infinity;20;0\", \"minecraft:knockback;-15;20\", \"minecraft:looting;6;9\", \"minecraft:loyalty;5;7\", \"minecraft:luck_of_the_sea;6;9\", \"minecraft:lure;6;9\", \"minecraft:mending;0;25\", \"minecraft:multishot;20;0\", \"minecraft:piercing;-9;10\", \"minecraft:power;-9;10\", \"minecraft:projectile_protection;-3;6\", \"minecraft:protection;-10;11\", \"minecraft:punch;-8;20\", \"minecraft:quick_charge;-8;20\", \"minecraft:respiration;0;10\", \"minecraft:riptide;10;7\", \"minecraft:sharpness;-10;11\", \"minecraft:silk_touch;15;0\", \"minecraft:smite;-3;8\", \"minecraft:soul_speed;0;10\", \"minecraft:sweeping;-4;9\", \"minecraft:thorns;-10;20\", \"minecraft:unbreaking;-3;8\", \"minecraft:vanishing_curse;25;0\"").define("min_enchantability", new ArrayList<>());
@@ -616,6 +616,8 @@ public final class Config {
                 boolean isImmuneToFire = i.isImmuneToFire;
                 String rarity = i.rarity.toString().toLowerCase();
                 int enchantability = i.getItemEnchantability();
+                String toolTypes = "";
+                if (i.getToolTypes(null).size() > 0) for (ToolType t : i.getToolTypes(null)) toolTypes = new StringBuilder("tool type: ").append(t.getName()).append(" (harvest level: ").append(i.getHarvestLevel(null, t, null, null)).append("), ").toString();
                 StringBuilder sb = new StringBuilder(i.getRegistryName().toString()).append(" - ");
                 if (items.get()) {
                     sb.append("max damage: ").append(maxDamage).append(", ");
@@ -630,8 +632,9 @@ public final class Config {
                     if (!group.equals("")) sb.append("group: ").append(group).append(", ");
                     if (isImmuneToFire) sb.append("is immune to fire: ").append(isImmuneToFire).append(", ");
                     if (!rarity.equals("common")) sb.append("rarity: ").append(rarity).append(", ");
-                    if (enchantability != 0) sb.append("enchantability: ").append(enchantability).append(", ");
+                    if (enchantability != 10) sb.append("enchantability: ").append(enchantability).append(", ");
                 }
+                sb.append(toolTypes);
                 if (i instanceof ArmorItem) {
                     int armor = ((ArmorItem) i).damageReduceAmount;
                     float toughness = ((ArmorItem) i).toughness;
