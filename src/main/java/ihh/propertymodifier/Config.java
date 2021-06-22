@@ -18,6 +18,7 @@ import net.minecraft.item.Rarity;
 import net.minecraft.item.SwordItem;
 import net.minecraft.item.TieredItem;
 import net.minecraft.item.ToolItem;
+import net.minecraft.item.TridentItem;
 import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.util.LazyValue;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -26,7 +27,6 @@ import net.minecraftforge.registries.ForgeRegistries;
 import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.misc.Triple;
 
-import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -36,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import javax.annotation.Nonnull;
 
 @SuppressWarnings({"ConstantConditions", "FieldMayBeFinal"})
 public final class Config {
@@ -165,11 +166,11 @@ public final class Config {
         TOUGHNESS = builder.comment("Sets the armor toughness value. 1 means half an armor icon, 20 means a full armor bar.").define("toughness", new ArrayList<>());
         KNOCKBACK_RESISTANCE = builder.comment("Sets the knockback resistance. Most have 0, netherite has 0.1.").define("knockback_resistance", new ArrayList<>());
         builder.pop();
-        builder.comment("Settings related to tools. Only tool and sword items can be affected, anything else will be skipped.").push("tools");
-        ATTACK_DAMAGE = builder.comment("Sets the tool/sword attack damage.").define("attack_damage", new ArrayList<>());
-        ATTACK_SPEED = builder.comment("Sets the tool/sword attack speed.").define("attack_speed", new ArrayList<>());
-        TOOL_HARVEST_LEVEL = builder.comment("Sets the tool harvest level. 0 is wood/gold, 1 is stone, 2 is iron, 3 is diamond/netherite. Does not work for swords.").define("harvest_level", new ArrayList<>());
-        EFFICIENCY = builder.comment("Sets the efficiency. Wood has 2, stone has 4, iron has 6, diamond has 8, netherite has 9, gold has 12. Does not work for swords.").define("efficiency", new ArrayList<>());
+        builder.comment("Settings related to tools. Only tool, sword and trident items can be affected, anything else will be skipped.").push("tools");
+        ATTACK_DAMAGE = builder.comment("Sets the attack damage.").define("attack_damage", new ArrayList<>());
+        ATTACK_SPEED = builder.comment("Sets the attack speed.").define("attack_speed", new ArrayList<>());
+        TOOL_HARVEST_LEVEL = builder.comment("Sets the tool harvest level. 0 is wood/gold, 1 is stone, 2 is iron, 3 is diamond/netherite. Does not work for swords or tridents.").define("harvest_level", new ArrayList<>());
+        EFFICIENCY = builder.comment("Sets the efficiency. Wood has 2, stone has 4, iron has 6, diamond has 8, netherite has 9, gold has 12. Does not work for swords or tridents.").define("efficiency", new ArrayList<>());
         builder.pop();
         builder.pop();
         builder.comment("Settings related to enchantments. Format is always \"enchantment;value\", with enchantment being in the format \"modid:enchantmentid\", unless stated otherwise. Alternatively, you can use \"any\" to apply the setting to all enchantments (usable e.g. to make all enchantments have the same rarity.) Note that entries are read from left to right, so you should put \"any\"-entries at the start, as they will overwrite anything stated before them.").push("enchantments");
@@ -200,7 +201,7 @@ public final class Config {
         List<Enchantment> ENCHANTMENT_REGISTRY = new ArrayList<>(ForgeRegistries.ENCHANTMENTS.getValues());
         BLOCK_REGISTRY.removeIf(e -> e.properties.isAir);
         ARMOR_REGISTRY.removeIf(e -> !(e instanceof ArmorItem));
-        TIERED_REGISTRY.removeIf(e -> !(e instanceof TieredItem));
+        TIERED_REGISTRY.removeIf(e -> !(e instanceof TieredItem) && !(e instanceof TridentItem));
         TOOL_REGISTRY.removeIf(e -> !(e instanceof ToolItem));
         boolean searchReload = false;
         dump(DUMP_BLOCKS, DUMP_BLOCKS_NON_DEFAULT, DUMP_ITEMS, DUMP_ITEMS_NON_DEFAULT, DUMP_ENCHANTMENTS, DUMP_GROUPS);
@@ -518,6 +519,15 @@ public final class Config {
                         sword.attributeModifiers = builder.build();
                     }
                 }
+            } else if (item instanceof TridentItem) {
+                TridentItem trident = (TridentItem) item;
+                Properties.Tool toolprop = (Properties.Tool) prop;
+                AttributeModifier damageAttr = trident.tridentAttributes.get(Attributes.ATTACK_DAMAGE).stream().findFirst().orElse(null);
+                AttributeModifier speedAttr = trident.tridentAttributes.get(Attributes.ATTACK_SPEED).stream().findFirst().orElse(null);
+                ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
+                builder.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.ATTACK_DAMAGE_MODIFIER, "Tool modifier", toolprop.ATTACK_DAMAGE != null ? toolprop.ATTACK_DAMAGE - 4 : damageAttr != null ? damageAttr.getAmount() : 0, AttributeModifier.Operation.ADDITION));
+                builder.put(Attributes.ATTACK_SPEED, new AttributeModifier(Item.ATTACK_SPEED_MODIFIER, "Tool modifier", toolprop.ATTACK_SPEED != null ? toolprop.ATTACK_SPEED - 4 : speedAttr != null ? speedAttr.getAmount() : 0, AttributeModifier.Operation.ADDITION));
+                trident.tridentAttributes = builder.build();
             }
         }
         for (Enchantment enchantment : ENCHANTMENTS.keySet()) {
@@ -558,7 +568,7 @@ public final class Config {
                     g.index = i;
                     d.invoke(null, i, g);
                 }
-            } catch (Exception e) {
+            } catch (ReflectiveOperationException e) {
                 Logger.error("Could not remove empty item groups:");
                 e.printStackTrace();
             }
@@ -619,7 +629,7 @@ public final class Config {
                 String rarity = i.rarity.toString().toLowerCase();
                 int enchantability = i.getItemEnchantability();
                 String toolTypes = "";
-                if (i.getToolTypes(null).size() > 0) for (ToolType t : i.getToolTypes(null)) toolTypes = "tool type: " + t.getName() + " (harvest level: " + i.getHarvestLevel(null, t, null, null) + "), ";
+                if (i.getToolTypes(null).size() > 0) for (ToolType t : i.getToolTypes(null)) toolTypes += "tool type: " + t.getName() + " (harvest level: " + i.getHarvestLevel(null, t, null, null) + "), ";
                 StringBuilder sb = new StringBuilder(i.getRegistryName().toString()).append(" - ");
                 if (items.get()) {
                     sb.append("max damage: ").append(maxDamage).append(", ");
@@ -628,6 +638,7 @@ public final class Config {
                     sb.append("is immune to fire: ").append(isImmuneToFire).append(", ");
                     sb.append("rarity: ").append(rarity).append(", ");
                     sb.append("enchantability: ").append(enchantability).append(", ");
+                    sb.append(toolTypes).append(", ");
                 } else if (itemsNonDefault.get()) {
                     if (maxDamage != 0) sb.append("max damage: ").append(maxDamage).append(", ");
                     if (maxStackSize != 64) sb.append("max stack size: ").append(maxStackSize).append(", ");
@@ -635,34 +646,40 @@ public final class Config {
                     if (isImmuneToFire) sb.append("is immune to fire: ").append(isImmuneToFire).append(", ");
                     if (!rarity.equals("common")) sb.append("rarity: ").append(rarity).append(", ");
                     if (enchantability != DEFAULT_ENCHANTABILITY.get()) sb.append("enchantability: ").append(enchantability).append(", ");
+                    if (!toolTypes.equals("")) sb.append(toolTypes).append(", ");
                 }
                 sb.append(toolTypes);
                 if (i instanceof ArmorItem) {
                     int armor = ((ArmorItem) i).damageReduceAmount;
                     float toughness = ((ArmorItem) i).toughness;
                     float knockbackResistance = ((ArmorItem) i).knockbackResistance;
-                    sb.append("armor: ").append(armor).append(", ");
                     if (items.get()) {
+                        sb.append("armor: ").append(armor).append(", ");
                         sb.append("toughness: ").append(toughness).append(", ");
                         sb.append("knockback resistance: ").append(knockbackResistance).append(", ");
                     } else if (itemsNonDefault.get()) {
+                        if (armor != 0) sb.append("armor: ").append(armor).append(", ");
                         if (toughness != 0) sb.append("toughness: ").append(toughness).append(", ");
                         if (knockbackResistance != 0) sb.append("knockback resistance: ").append(knockbackResistance).append(", ");
                     }
                 }
-                if (i instanceof ToolItem) {
-                    float efficiency = ((ToolItem) i).efficiency;
-                    float damage = ((ToolItem) i).attackDamage;
-                    AttributeModifier speedAttr = ((ToolItem) i).toolAttributes.get(Attributes.ATTACK_SPEED).stream().findFirst().orElse(null);
-                    float speed = speedAttr != null ? (float) speedAttr.getAmount() : 0;
-                    sb.append("efficiency: ").append(efficiency).append(", ");
-                    sb.append("attack damage: ").append(damage + 1f).append(", ");
-                    sb.append("attack speed: ").append(speed + 4f).append(", ");
-                }
-                if (i instanceof SwordItem) {
-                    float damage = ((SwordItem) i).attackDamage;
-                    AttributeModifier speedAttr = ((SwordItem) i).attributeModifiers.get(Attributes.ATTACK_SPEED).stream().findFirst().orElse(null);
-                    float speed = speedAttr != null ? (float) speedAttr.getAmount() : 0;
+                if (i instanceof ToolItem || i instanceof SwordItem || i instanceof TridentItem) {
+                    if (i instanceof ToolItem) sb.append("efficiency: ").append(((ToolItem) i).efficiency).append(", ");
+                    float damage = 0, speed = 0;
+                    if (i instanceof ToolItem) {
+                        damage = ((ToolItem) i).attackDamage;
+                        AttributeModifier speedAttr = ((ToolItem) i).toolAttributes.get(Attributes.ATTACK_SPEED).stream().findFirst().orElse(null);
+                        speed = speedAttr != null ? (float) speedAttr.getAmount() : 0;
+                    } else if (i instanceof SwordItem) {
+                        damage = ((SwordItem) i).attackDamage;
+                        AttributeModifier speedAttr = ((SwordItem) i).attributeModifiers.get(Attributes.ATTACK_SPEED).stream().findFirst().orElse(null);
+                        speed = speedAttr != null ? (float) speedAttr.getAmount() : 0;
+                    } else if (i instanceof TridentItem) {
+                        AttributeModifier damageAttr = ((TridentItem) i).tridentAttributes.get(Attributes.ATTACK_DAMAGE).stream().findFirst().orElse(null);
+                        AttributeModifier speedAttr = ((TridentItem) i).tridentAttributes.get(Attributes.ATTACK_SPEED).stream().findFirst().orElse(null);
+                        damage = damageAttr != null ? (float) damageAttr.getAmount() : 0;
+                        speed = speedAttr != null ? (float) speedAttr.getAmount() : 0;
+                    }
                     sb.append("attack damage: ").append(damage + 1f).append(", ");
                     sb.append("attack speed: ").append(speed + 4f).append(", ");
                 }
