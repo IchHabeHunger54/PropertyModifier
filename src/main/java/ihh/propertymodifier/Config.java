@@ -74,6 +74,7 @@ public final class Config {
     private static ForgeConfigSpec.BooleanValue DUMP_ENCHANTMENTS_AFTER;
     private static ForgeConfigSpec.BooleanValue DUMP_GROUPS;
     private static ForgeConfigSpec.BooleanValue DUMP_GROUPS_AFTER;
+    private static ForgeConfigSpec.IntValue DEFAULT_ENCHANTABILITY;
     private static ForgeConfigSpec.ConfigValue<List<String>> ITEM_GROUP;
     private static ForgeConfigSpec.ConfigValue<List<String>> HARDNESS;
     private static ForgeConfigSpec.ConfigValue<List<String>> RESISTANCE;
@@ -137,6 +138,7 @@ public final class Config {
         DUMP_ENCHANTMENTS_AFTER = builder.comment("Dump enchantments AFTER applying the changes.").define("dump_enchantments_after", false);
         DUMP_GROUPS = builder.comment("Dump item groups BEFORE applying the changes.").define("dump_groups", false);
         DUMP_GROUPS_AFTER = builder.comment("Dump item groups AFTER applying the changes.").define("dump_groups_after", false);
+        DEFAULT_ENCHANTABILITY = builder.comment("The default enchantability of items. Change this if you have a mod installed that makes every item enchantable (and thus have a different enchantability). If you are unsure, leave this unchanged and run the item dumping. You will see if you need to change it or not.").defineInRange("default_enchantability", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
         builder.pop();
         builder.comment("Settings related to blocks. Format is always \"block;value\", with block being in the format \"modid:blockid\". Alternatively, you can use \"any\" to apply the setting to all blocks (usable e.g. to set all light levels to 0 and then add light level to only a select few blocks.) Note that entries are read from left to right, so you should put \"any\"-entries at the start, as they will overwrite anything stated before them. Note that NBT is currently not supported.").push("blocks");
         HARDNESS = builder.comment("How long the block takes to break. 0.4 is netherrack, 0.5 is dirt, 0.6 is grass block, 1.5 is stone and cobblestone, 3 is end stone, 50 is obsidian. -1 makes the block unbreakable. \"minecraft:obsidian;1.5\" would make obsidian break as fast as stone.").define("hardness", new ArrayList<>());
@@ -617,7 +619,7 @@ public final class Config {
                 String rarity = i.rarity.toString().toLowerCase();
                 int enchantability = i.getItemEnchantability();
                 String toolTypes = "";
-                if (i.getToolTypes(null).size() > 0) for (ToolType t : i.getToolTypes(null)) toolTypes = new StringBuilder("tool type: ").append(t.getName()).append(" (harvest level: ").append(i.getHarvestLevel(null, t, null, null)).append("), ").toString();
+                if (i.getToolTypes(null).size() > 0) for (ToolType t : i.getToolTypes(null)) toolTypes = "tool type: " + t.getName() + " (harvest level: " + i.getHarvestLevel(null, t, null, null) + "), ";
                 StringBuilder sb = new StringBuilder(i.getRegistryName().toString()).append(" - ");
                 if (items.get()) {
                     sb.append("max damage: ").append(maxDamage).append(", ");
@@ -632,7 +634,7 @@ public final class Config {
                     if (!group.equals("")) sb.append("group: ").append(group).append(", ");
                     if (isImmuneToFire) sb.append("is immune to fire: ").append(isImmuneToFire).append(", ");
                     if (!rarity.equals("common")) sb.append("rarity: ").append(rarity).append(", ");
-                    if (enchantability != 10) sb.append("enchantability: ").append(enchantability).append(", ");
+                    if (enchantability != DEFAULT_ENCHANTABILITY.get()) sb.append("enchantability: ").append(enchantability).append(", ");
                 }
                 sb.append(toolTypes);
                 if (i instanceof ArmorItem) {
