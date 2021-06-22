@@ -162,7 +162,7 @@ public final class ServerConfig {
             VillagerTrades.VILLAGER_DEFAULT_TRADES.putAll(v);
         }
         Int2ObjectOpenHashMap<VillagerTrades.ITrade[]> t = traderTrades();
-        if (t.get(1).length > 0 && t.get(2).length > 0) {
+        if (!t.isEmpty()) {
             try {
                 Field f = VillagerTradingManager.class.getDeclaredField("WANDERER_TRADES");
                 f.setAccessible(true);
@@ -173,7 +173,8 @@ public final class ServerConfig {
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 e.printStackTrace();
             }
-            VillagerTrades.field_221240_b.putAll(t);
+            if (t.get(1).length > 0) VillagerTrades.field_221240_b.put(1, t.get(1));
+            if (t.get(2).length > 0) VillagerTrades.field_221240_b.put(2, t.get(2));
         }
     }
 
@@ -265,40 +266,37 @@ public final class ServerConfig {
     }
 
     private static VillagerTrades.ITrade[] traderTrades(List<String> l) {
-        List<List<String>> str = new ArrayList<>();
-        for (String s : l) str.add(Arrays.asList(s.split(";")));
-        str = str.stream().filter(e -> e.size() > 2).collect(Collectors.toList());
-        List<VillagerTrades.ITrade> res = new ArrayList<>();
-        for (List<String> s : str)
+        List<VillagerTrades.ITrade> r = new ArrayList<>();
+        for (List<String> s : l.stream().filter(e -> e.split(";").length > 2).map(e -> Arrays.asList(e.split(";"))).collect(Collectors.toList()))
             try {
                 int uses = Integer.parseInt(s.get(0));
                 float price = Float.parseFloat(s.get(1));
                 switch (s.get(2)) {
                     case "normal":
-                        TradeUtil.addNormalTrade(res, uses, 1, price, new ArrayList<>(s.subList(3, s.size())));
+                        TradeUtil.addNormalTrade(r, uses, 1, price, new ArrayList<>(s.subList(3, s.size())));
                         break;
                     case "dyed":
-                        TradeUtil.addDyedTrade(res, uses, 1, price, new ArrayList<>(s.subList(3, s.size())));
+                        TradeUtil.addDyedTrade(r, uses, 1, price, new ArrayList<>(s.subList(3, s.size())));
                         break;
                     case "map":
-                        TradeUtil.addMapTrade(res, uses, 1, price, new ArrayList<>(s.subList(3, s.size())));
+                        TradeUtil.addMapTrade(r, uses, 1, price, new ArrayList<>(s.subList(3, s.size())));
                         break;
                     case "enchantedbook":
-                        TradeUtil.addEnchantedBookTrade(res, uses, 1, price, new ArrayList<>(s.subList(3, s.size())));
+                        TradeUtil.addEnchantedBookTrade(r, uses, 1, price, new ArrayList<>(s.subList(3, s.size())));
                         break;
                     case "enchanteditem":
-                        TradeUtil.addEnchantedItemTrade(res, uses, 1, price, new ArrayList<>(s.subList(3, s.size())));
+                        TradeUtil.addEnchantedItemTrade(r, uses, 1, price, new ArrayList<>(s.subList(3, s.size())));
                         break;
                     case "potion":
-                        TradeUtil.addPotionTrade(res, uses, 1, price, new ArrayList<>(s.subList(3, s.size())));
+                        TradeUtil.addPotionTrade(r, uses, 1, price, new ArrayList<>(s.subList(3, s.size())));
                         break;
                     case "stew":
-                        TradeUtil.addStewTrade(res, uses, 1, price, new ArrayList<>(s.subList(3, s.size())));
+                        TradeUtil.addStewTrade(r, uses, 1, price, new ArrayList<>(s.subList(3, s.size())));
                         break;
                 }
             } catch (RuntimeException e) {
                 e.printStackTrace();
             }
-        return res.toArray(new VillagerTrades.ITrade[0]);
+        return r.toArray(new VillagerTrades.ITrade[0]);
     }
 }
