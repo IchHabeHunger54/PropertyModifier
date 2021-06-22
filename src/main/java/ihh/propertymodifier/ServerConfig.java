@@ -43,7 +43,7 @@ public final class ServerConfig {
     private static ForgeConfigSpec.BooleanValue DUMP_TILLING;
     private static ForgeConfigSpec.BooleanValue DUMP_TILLING_AFTER;
     private static ForgeConfigSpec.ConfigValue<List<String>> COMPOSTER_INPUTS;
-    static ForgeConfigSpec.BooleanValue COMPOSTER_CLEAR;
+    private static ForgeConfigSpec.BooleanValue COMPOSTER_CLEAR;
     private static ForgeConfigSpec.ConfigValue<List<String>> AXE_BLOCKS;
     static ForgeConfigSpec.BooleanValue AXE_CLEAR;
     private static ForgeConfigSpec.ConfigValue<List<String>> SHOVEL_BLOCKS;
@@ -147,7 +147,7 @@ public final class ServerConfig {
             p.put(e.getValue().a, l);
             MODIFIERS.put(e.getKey(), p);
         }
-        HashMap<VillagerProfession, Int2ObjectOpenHashMap<VillagerTrades.ITrade[]>> v = ServerConfig.villagerTrades();
+        HashMap<VillagerProfession, Int2ObjectOpenHashMap<VillagerTrades.ITrade[]>> v = villagerTrades();
         if (!v.isEmpty()) {
             try {
                 Field f = VillagerTradingManager.class.getDeclaredField("VANILLA_TRADES");
@@ -161,7 +161,7 @@ public final class ServerConfig {
             }
             VillagerTrades.VILLAGER_DEFAULT_TRADES.putAll(v);
         }
-        Int2ObjectOpenHashMap<VillagerTrades.ITrade[]> t = ServerConfig.traderTrades();
+        Int2ObjectOpenHashMap<VillagerTrades.ITrade[]> t = traderTrades();
         if (t.get(1).length > 0 && t.get(2).length > 0) {
             try {
                 Field f = VillagerTradingManager.class.getDeclaredField("WANDERER_TRADES");
@@ -176,82 +176,85 @@ public final class ServerConfig {
             VillagerTrades.field_221240_b.putAll(t);
         }
     }
-    
+
     private static void dump(ForgeConfigSpec.BooleanValue composter, ForgeConfigSpec.BooleanValue stripping, ForgeConfigSpec.BooleanValue pathing, ForgeConfigSpec.BooleanValue tilling) {
         if (composter.get()) {
             Logger.forceInfo("Composter inputs:");
-            for (Map.Entry<IItemProvider, Float> e : ComposterBlock.CHANCES.entrySet()) Logger.forceInfo(e.getKey().asItem() + " -> " + e.getValue());
+            for (Map.Entry<IItemProvider, Float> e : ComposterBlock.CHANCES.entrySet())
+                Logger.forceInfo(e.getKey().asItem() + " -> " + e.getValue());
         }
         if (stripping.get()) {
             Logger.forceInfo("Stripping transitions:");
-            for (Map.Entry<Block, Block> e : AxeItem.BLOCK_STRIPPING_MAP.entrySet()) Logger.forceInfo(e.getKey().getRegistryName().toString() + " -> " + e.getValue().getRegistryName().toString());
+            for (Map.Entry<Block, Block> e : AxeItem.BLOCK_STRIPPING_MAP.entrySet())
+                Logger.forceInfo(e.getKey().getRegistryName().toString() + " -> " + e.getValue().getRegistryName().toString());
         }
         if (pathing.get()) {
             Logger.forceInfo("Pathing transitions:");
-            for (Map.Entry<Block, BlockState> e : ShovelItem.SHOVEL_LOOKUP.entrySet()) Logger.forceInfo(e.getKey().getRegistryName().toString() + " -> " + e.getValue().getBlock().getRegistryName().toString());
+            for (Map.Entry<Block, BlockState> e : ShovelItem.SHOVEL_LOOKUP.entrySet())
+                Logger.forceInfo(e.getKey().getRegistryName().toString() + " -> " + e.getValue().getBlock().getRegistryName().toString());
         }
         if (tilling.get()) {
             Logger.forceInfo("Tilling transitions:");
-            for (Map.Entry<Block, BlockState> e : HoeItem.HOE_LOOKUP.entrySet()) Logger.forceInfo(e.getKey().getRegistryName().toString() + " -> " + e.getValue().getBlock().getRegistryName().toString());
+            for (Map.Entry<Block, BlockState> e : HoeItem.HOE_LOOKUP.entrySet())
+                Logger.forceInfo(e.getKey().getRegistryName().toString() + " -> " + e.getValue().getBlock().getRegistryName().toString());
         }
     }
 
     private static HashMap<VillagerProfession, Int2ObjectOpenHashMap<VillagerTrades.ITrade[]>> villagerTrades() {
         HashMap<VillagerProfession, Int2ObjectOpenHashMap<VillagerTrades.ITrade[]>> res = new HashMap<>();
-        Int2ObjectOpenHashMap<VillagerTrades.ITrade[]> map = new Int2ObjectOpenHashMap<>();
         for (VillagerProfession p : ForgeRegistries.PROFESSIONS.getValues()) {
-            villagerTrades(p, map, VILLAGER_1_TRADES, 1);
-            villagerTrades(p, map, VILLAGER_2_TRADES, 2);
-            villagerTrades(p, map, VILLAGER_3_TRADES, 3);
-            villagerTrades(p, map, VILLAGER_4_TRADES, 4);
-            villagerTrades(p, map, VILLAGER_5_TRADES, 5);
-            res.put(p, map);
-            map.clear();
+            res.put(p, new Int2ObjectOpenHashMap<>());
+            res.get(p).put(1, villagerTrades(p, VILLAGER_1_TRADES.get().stream().filter(e -> e.split(";").length > 4).map(e -> Arrays.asList(e.split(";"))).collect(Collectors.toList())));
+            res.get(p).put(2, villagerTrades(p, VILLAGER_2_TRADES.get().stream().filter(e -> e.split(";").length > 4).map(e -> Arrays.asList(e.split(";"))).collect(Collectors.toList())));
+            res.get(p).put(3, villagerTrades(p, VILLAGER_3_TRADES.get().stream().filter(e -> e.split(";").length > 4).map(e -> Arrays.asList(e.split(";"))).collect(Collectors.toList())));
+            res.get(p).put(4, villagerTrades(p, VILLAGER_4_TRADES.get().stream().filter(e -> e.split(";").length > 4).map(e -> Arrays.asList(e.split(";"))).collect(Collectors.toList())));
+            res.get(p).put(5, villagerTrades(p, VILLAGER_5_TRADES.get().stream().filter(e -> e.split(";").length > 4).map(e -> Arrays.asList(e.split(";"))).collect(Collectors.toList())));
+            for (int i = 1; i <= 5; i++)
+                if (res.get(p).get(i) == null || res.get(p).get(i).length == 0)
+                    res.get(p).put(i, VillagerTrades.VILLAGER_DEFAULT_TRADES.get(p).get(i));
         }
         return res;
     }
 
-    private static void villagerTrades(VillagerProfession p, Int2ObjectOpenHashMap<VillagerTrades.ITrade[]> map, ForgeConfigSpec.ConfigValue<List<String>> cfg, int i) {
-        List<List<String>> str = new ArrayList<>();
-        for (String s : cfg.get()) str.add(Arrays.asList(s.split(";")));
-        List<VillagerTrades.ITrade> res = new ArrayList<>();
-        for (List<String> l : str.stream().filter(e -> ForgeRegistries.PROFESSIONS.getValue(new ResourceLocation(e.get(0))) == p).filter(e -> e.size() > 4).collect(Collectors.toList()))
+    private static VillagerTrades.ITrade[] villagerTrades(VillagerProfession p, List<List<String>> l) {
+        List<VillagerTrades.ITrade> r = new ArrayList<>();
+        l.stream().filter(e -> ForgeRegistries.PROFESSIONS.getValue(new ResourceLocation(e.get(0))) == p).forEach(e -> {
             try {
-                int uses = Integer.parseInt(l.get(1));
-                int xp = Integer.parseInt(l.get(2));
-                float price = Float.parseFloat(l.get(3));
-                if (uses < 1 || xp < 1 || price < 0 || price >= 1) continue;
-                switch (l.get(4)) {
+                int uses = Integer.parseInt(e.get(1));
+                int xp = Integer.parseInt(e.get(2));
+                float price = Float.parseFloat(e.get(3));
+                if (uses < 1 || xp < 1 || price < 0 || price >= 1) return;
+                switch (e.get(4)) {
                     case "normal":
-                        TradeUtil.addNormalTrade(res, uses, xp, price, new ArrayList<>(l.subList(5, l.size())));
+                        TradeUtil.addNormalTrade(r, uses, xp, price, new ArrayList<>(e.subList(5, e.size())));
                         break;
                     case "dyed":
-                        TradeUtil.addDyedTrade(res, uses, xp, price, new ArrayList<>(l.subList(5, l.size())));
+                        TradeUtil.addDyedTrade(r, uses, xp, price, new ArrayList<>(e.subList(5, e.size())));
                         break;
                     case "map":
-                        TradeUtil.addMapTrade(res, uses, xp, price, new ArrayList<>(l.subList(5, l.size())));
+                        TradeUtil.addMapTrade(r, uses, xp, price, new ArrayList<>(e.subList(5, e.size())));
                         break;
                     case "biome":
-                        TradeUtil.addBiomeTrade(res, uses, xp, price, new ArrayList<>(l.subList(5, l.size())));
+                        TradeUtil.addBiomeTrade(r, uses, xp, price, new ArrayList<>(e.subList(5, e.size())));
                         break;
                     case "enchantedbook":
-                        TradeUtil.addEnchantedBookTrade(res, uses, xp, price, new ArrayList<>(l.subList(5, l.size())));
+                        TradeUtil.addEnchantedBookTrade(r, uses, xp, price, new ArrayList<>(e.subList(5, e.size())));
                         break;
                     case "enchanteditem":
-                        TradeUtil.addEnchantedItemTrade(res, uses, xp, price, new ArrayList<>(l.subList(5, l.size())));
+                        TradeUtil.addEnchantedItemTrade(r, uses, xp, price, new ArrayList<>(e.subList(5, e.size())));
                         break;
                     case "potion":
-                        TradeUtil.addPotionTrade(res, uses, xp, price, new ArrayList<>(l.subList(5, l.size())));
+                        TradeUtil.addPotionTrade(r, uses, xp, price, new ArrayList<>(e.subList(5, e.size())));
                         break;
                     case "stew":
-                        TradeUtil.addStewTrade(res, uses, xp, price, new ArrayList<>(l.subList(5, l.size())));
+                        TradeUtil.addStewTrade(r, uses, xp, price, new ArrayList<>(e.subList(5, e.size())));
                         break;
                 }
-            } catch (RuntimeException e) {
-                e.printStackTrace();
+            } catch (RuntimeException x) {
+                x.printStackTrace();
             }
-        VillagerTrades.ITrade[] arr = res.toArray(new VillagerTrades.ITrade[0]);
-        map.put(i, arr.length == 0 ? VillagerTrades.VILLAGER_DEFAULT_TRADES.get(p).get(i) : arr);
+        });
+        return r.toArray(new VillagerTrades.ITrade[0]);
     }
 
     private static Int2ObjectOpenHashMap<VillagerTrades.ITrade[]> traderTrades() {
