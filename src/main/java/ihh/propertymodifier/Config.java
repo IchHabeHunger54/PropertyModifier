@@ -754,6 +754,6 @@ public final class Config {
     }
 
     private static Properties.Item itemProperties(Item item) {
-        return item instanceof ArmorItem ? new Properties.Armor() : item instanceof TieredItem ? new Properties.Tool() : new Properties.Item();
+        return item instanceof ArmorItem ? new Properties.Armor() : item instanceof TieredItem || item instanceof TridentItem ? new Properties.Tool() : new Properties.Item();
     }
 }
