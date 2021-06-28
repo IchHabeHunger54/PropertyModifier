@@ -53,8 +53,13 @@ minecraft {
     }
 }
 sourceSets.main.resources { srcDir 'src/generated/resources' }
+repositories {
+    maven { url = "https://dvs1.progwml6.com/files/maven/" }
+    maven { url = "https://modmaven.k-4u.nl" }
+}
 dependencies {
     minecraft 'net.minecraftforge:forge:1.16.5-36.1.0'
+    runtimeOnly fg.deobf("mezz.jei:jei-1.16.5:7.6.1.75")
 }
 jar {
     manifest {

@@ -192,7 +192,7 @@ public final class Config {
         SPEC = builder.build();
     }
 
-    public static void work() {
+    public static void read() {
         List<Block> BLOCK_REGISTRY = new ArrayList<>(ForgeRegistries.BLOCKS.getValues());
         List<Item> ITEM_REGISTRY = new ArrayList<>(ForgeRegistries.ITEMS.getValues());
         List<Item> ARMOR_REGISTRY = new ArrayList<>(ForgeRegistries.ITEMS.getValues());
@@ -203,7 +203,6 @@ public final class Config {
         ARMOR_REGISTRY.removeIf(e -> !(e instanceof ArmorItem));
         TIERED_REGISTRY.removeIf(e -> !(e instanceof TieredItem) && !(e instanceof TridentItem));
         TOOL_REGISTRY.removeIf(e -> !(e instanceof ToolItem));
-        boolean searchReload = false;
         dump(DUMP_BLOCKS, DUMP_BLOCKS_NON_DEFAULT, DUMP_ITEMS, DUMP_ITEMS_NON_DEFAULT, DUMP_ENCHANTMENTS, DUMP_GROUPS);
         if (REMOVE_ENCHANTMENT_ITEM_GROUPS.get())
             for (ItemGroup g : ItemGroup.GROUPS)
@@ -397,11 +396,27 @@ public final class Config {
                     List<EnchantmentType> l = ENCHANTMENT_GROUPS.getOrDefault(g, new ArrayList<>());
                     l.add(t);
                     ENCHANTMENT_GROUPS.put(g, l);
-                } else Logger.error(s[1] + " is not an item group (is invalid for entry " + v + " in enchantment.group)");
+                } else
+                    Logger.error(s[1] + " is not an item group (is invalid for entry " + v + " in enchantment.group)");
             } catch (IllegalArgumentException e) {
                 Logger.error("Unknown enchantment type " + s[0]);
             }
         }
+    }
+
+    public static void workCreative() {
+        boolean searchReload = false;
+        for (Item item : ITEMS.keySet()) {
+            Properties.Item prop = ITEMS.get(item);
+            if (prop.GROUP != null) {
+                item.group = prop.GROUP;
+                searchReload = true;
+            }
+        }
+        if (searchReload) Minecraft.getInstance().populateSearchTreeManager();
+    }
+
+    public static void work() {
         for (Block block : BLOCKS.keySet()) {
             Properties.Block prop = BLOCKS.get(block);
             if (prop.HARDNESS != null) {
@@ -461,10 +476,6 @@ public final class Config {
             Properties.Item prop = ITEMS.get(item);
             if (prop.MAX_DAMAGE != null && item.maxDamage > 0) item.maxDamage = prop.MAX_DAMAGE;
             if (prop.MAX_STACK_SIZE != null && item.maxDamage == 0) item.maxStackSize = prop.MAX_STACK_SIZE;
-            if (prop.GROUP != null) {
-                item.group = prop.GROUP;
-                searchReload = true;
-            }
             if (prop.IS_IMMUNE_TO_FIRE != null) item.isImmuneToFire = prop.IS_IMMUNE_TO_FIRE;
             if (prop.RARITY != null) item.rarity = prop.RARITY;
             if (prop.ENCHANTABILITY != null) MIXIN_ENCHANTABILITY.put(item, prop.ENCHANTABILITY);
@@ -573,7 +584,6 @@ public final class Config {
                 e.printStackTrace();
             }
         }
-        if (searchReload) Minecraft.getInstance().populateSearchTreeManager();
         dump(DUMP_BLOCKS_AFTER, DUMP_BLOCKS_AFTER_NON_DEFAULT, DUMP_ITEMS_AFTER, DUMP_ITEMS_AFTER_NON_DEFAULT, DUMP_ENCHANTMENTS_AFTER, DUMP_GROUPS_AFTER);
     }
 
