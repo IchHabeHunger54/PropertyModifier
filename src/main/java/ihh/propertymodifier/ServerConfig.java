@@ -182,7 +182,7 @@ public final class ServerConfig {
         if (composter.get()) {
             Logger.forceInfo("Composter inputs:");
             for (Map.Entry<IItemProvider, Float> e : ComposterBlock.CHANCES.entrySet())
-                Logger.forceInfo(e.getKey().asItem() + " -> " + e.getValue());
+                Logger.forceInfo(e.getKey().asItem().getRegistryName().toString() + " -> " + e.getValue());
         }
         if (stripping.get()) {
             Logger.forceInfo("Stripping transitions:");

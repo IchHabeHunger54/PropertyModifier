@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import net.minecraft.block.Block;
 import net.minecraft.block.SoundType;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screen.inventory.CreativeScreen;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentType;
 import net.minecraft.entity.ai.attributes.Attribute;
@@ -115,6 +116,7 @@ public final class Config {
 */
     private static ForgeConfigSpec.ConfigValue<List<String>> ENCHANTMENT_ITEM_GROUP;
     private static ForgeConfigSpec.BooleanValue REMOVE_ENCHANTMENT_ITEM_GROUPS;
+    private static boolean searchReload = false;
 
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder().comment("Any invalid entries will result in a log warning, but will just be skipped, and working entries will work.");
@@ -405,7 +407,6 @@ public final class Config {
     }
 
     public static void workCreative() {
-        boolean searchReload = false;
         for (Item item : ITEMS.keySet()) {
             Properties.Item prop = ITEMS.get(item);
             if (prop.GROUP != null) {
@@ -413,7 +414,6 @@ public final class Config {
                 searchReload = true;
             }
         }
-        if (searchReload) Minecraft.getInstance().populateSearchTreeManager();
     }
 
     public static void work() {
@@ -561,7 +561,7 @@ public final class Config {
             ArrayList<ItemGroup> groups = Lists.newArrayList(ItemGroup.GROUPS);
             ArrayList<ItemGroup> result = Lists.newArrayList(ItemGroup.GROUPS);
             for (ItemGroup t : groups) {
-                if (t == ItemGroup.SEARCH || t == ItemGroup.HOTBAR || t == ItemGroup.INVENTORY || t.getRelevantEnchantmentTypes().length > 0) continue;
+                if (t.getRelevantEnchantmentTypes().length > 0) continue;
                 boolean b = false;
                 for (Item item : ForgeRegistries.ITEMS)
                     if (item.group == t) {
@@ -570,21 +570,15 @@ public final class Config {
                     }
                 if (!b) result.remove(t);
             }
-            ItemGroup.GROUPS = new ItemGroup[0];
-            try {
-                Method d = ItemGroup.class.getDeclaredMethod("addGroupSafe", int.class, ItemGroup.class);
-                d.setAccessible(true);
-                for (int i = 0; i < result.size(); i++) {
-                    ItemGroup g = result.get(i);
-                    g.index = i;
-                    d.invoke(null, i, g);
-                }
-            } catch (ReflectiveOperationException e) {
-                Logger.error("Could not remove empty item groups:");
-                e.printStackTrace();
-            }
+            result.add(4, ItemGroup.HOTBAR);
+            result.add(5, ItemGroup.SEARCH);
+            result.add(11, ItemGroup.INVENTORY);
+            for (int i = 0; i < result.size(); i++) result.get(i).index = i;
+            ItemGroup.GROUPS = result.toArray(new ItemGroup[0]);
         }
+        ItemGroup.BUILDING_BLOCKS.index = 0;
         dump(DUMP_BLOCKS_AFTER, DUMP_BLOCKS_AFTER_NON_DEFAULT, DUMP_ITEMS_AFTER, DUMP_ITEMS_AFTER_NON_DEFAULT, DUMP_ENCHANTMENTS_AFTER, DUMP_GROUPS_AFTER);
+        if (searchReload) Minecraft.getInstance().populateSearchTreeManager();
     }
 
     private static void dump(ForgeConfigSpec.BooleanValue blocks, ForgeConfigSpec.BooleanValue blocksNonDefault, ForgeConfigSpec.BooleanValue items, ForgeConfigSpec.BooleanValue itemsNonDefault, ForgeConfigSpec.BooleanValue enchantments, ForgeConfigSpec.BooleanValue groups) {
@@ -626,7 +620,7 @@ public final class Config {
                     if (jumpFactor != 1) sb.append("jump factor: ").append(jumpFactor).append(", ");
                     if (soundType != null && !soundType.equals("stone")) sb.append("sound type: ").append(soundType).append(", ");
                 }
-                if (!sb.toString().equals(b.getRegistryName().toString() + " - ")) Logger.forceInfo(sb.substring(0, sb.length() - 2));
+                Logger.forceInfo(sb.substring(0, sb.length() - (sb.toString().equals(b.getRegistryName().toString()) ? 0 : 2)));
             }
         }
         if (items.get() || itemsNonDefault.get()) {
@@ -638,8 +632,8 @@ public final class Config {
                 boolean isImmuneToFire = i.isImmuneToFire;
                 String rarity = i.rarity.toString().toLowerCase();
                 int enchantability = i.getItemEnchantability();
-                String toolTypes = "";
-                if (i.getToolTypes(null).size() > 0) for (ToolType t : i.getToolTypes(null)) toolTypes += "tool type: " + t.getName() + " (harvest level: " + i.getHarvestLevel(null, t, null, null) + "), ";
+                StringBuilder toolTypes = new StringBuilder();
+                if (i.getToolTypes(null).size() > 0) for (ToolType t : i.getToolTypes(null)) toolTypes.append("tool type: ").append(t.getName()).append(" (harvest level: ").append(i.getHarvestLevel(null, t, null, null)).append("), ");
                 StringBuilder sb = new StringBuilder(i.getRegistryName().toString()).append(" - ");
                 if (items.get()) {
                     sb.append("max damage: ").append(maxDamage).append(", ");
@@ -656,7 +650,7 @@ public final class Config {
                     if (isImmuneToFire) sb.append("is immune to fire: ").append(isImmuneToFire).append(", ");
                     if (!rarity.equals("common")) sb.append("rarity: ").append(rarity).append(", ");
                     if (enchantability != DEFAULT_ENCHANTABILITY.get()) sb.append("enchantability: ").append(enchantability).append(", ");
-                    if (!toolTypes.equals("")) sb.append(toolTypes).append(", ");
+                    if (!toolTypes.toString().equals("")) sb.append(toolTypes).append(", ");
                 }
                 sb.append(toolTypes);
                 if (i instanceof ArmorItem) {
