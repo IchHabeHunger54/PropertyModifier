@@ -13,6 +13,7 @@ import net.minecraft.util.LazyValue;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ToolType;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.IForgeRegistry;
 import net.minecraftforge.registries.IForgeRegistryEntry;
 import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.misc.Triple;
@@ -301,6 +302,12 @@ public final class ConfigUtil {
 
     public static <T extends IForgeRegistryEntry<T>> T fromRegistry(String s, List<? extends T> l) {
         for (T t : l) if (t.getRegistryName().toString().equals(s)) return t;
+        Logger.error("Could not find " + s);
+        return null;
+    }
+
+    public static <T extends IForgeRegistryEntry<T>> T fromRegistry(String s, IForgeRegistry<T> r) {
+        for (T t : r.getValues()) if (t.getRegistryName().toString().equals(s)) return t;
         Logger.error("Could not find " + s);
         return null;
     }

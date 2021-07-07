@@ -140,13 +140,16 @@ public final class ServerConfig {
         for (Map.Entry<Block, Block> entry : ConfigUtil.getMap(HOE_BLOCKS, BLOCK_REGISTRY, ConfigUtil::parseBlock, e -> true, "").entrySet())
             if (entry.getValue() != null) HoeItem.HOE_LOOKUP.put(entry.getKey(), entry.getValue().getDefaultState());
         dump(DUMP_COMPOSTER_AFTER, DUMP_STRIPPING_AFTER, DUMP_PATHING_AFTER, DUMP_TILLING_AFTER);
-        for (Map.Entry<EntityType<?>, Triple<Attribute, Float, Integer>> e : ConfigUtil.tripleMap(ENTITY_MODIFIERS, new ArrayList<>(ForgeRegistries.ENTITIES.getValues()), ConfigUtil::parseAttribute, e -> true, ConfigUtil::parseFloat, e -> e >= 0, ConfigUtil::parseInt, e -> e > -1 && e < 3).entrySet()) {
-            Map<Attribute, List<AttributeModifier>> p = MODIFIERS.getOrDefault(e.getKey(), new HashMap<>());
-            List<AttributeModifier> l = p.getOrDefault(e.getValue().a, new ArrayList<>());
-            l.add(new AttributeModifier(e.getValue().a.getAttributeName(), e.getValue().b, AttributeModifier.Operation.byId(e.getValue().c)));
-            p.put(e.getValue().a, l);
-            MODIFIERS.put(e.getKey(), p);
-        }
+        MODIFIERS.clear();
+        for (Map.Entry<EntityType<?>, Map<Attribute, List<AttributeModifier>>> e : parseAttributeList().entrySet())
+            for (Attribute attr : e.getValue().keySet())
+                for (AttributeModifier a : e.getValue().get(attr)) {
+                    Map<Attribute, List<AttributeModifier>> p = MODIFIERS.getOrDefault(e.getKey(), new HashMap<>());
+                    List<AttributeModifier> l = p.getOrDefault(attr, new ArrayList<>());
+                    l.add(a);
+                    p.put(attr, l);
+                    MODIFIERS.put(e.getKey(), p);
+                }
         HashMap<VillagerProfession, Int2ObjectOpenHashMap<VillagerTrades.ITrade[]>> v = villagerTrades();
         if (!v.isEmpty()) {
             try {
@@ -298,5 +301,24 @@ public final class ServerConfig {
                 e.printStackTrace();
             }
         return r.toArray(new VillagerTrades.ITrade[0]);
+    }
+
+    private static HashMap<EntityType<?>, Map<Attribute, List<AttributeModifier>>> parseAttributeList() {
+        HashMap<EntityType<?>, Map<Attribute, List<AttributeModifier>>> result = new HashMap<>();
+        for (String v : ENTITY_MODIFIERS.get()) {
+            String[] s = ConfigUtil.split(v, 4, ENTITY_MODIFIERS);
+            if (s == null) continue;
+            EntityType<?> type = ConfigUtil.fromRegistry(s[0], ForgeRegistries.ENTITIES);
+            Attribute attribute = ConfigUtil.fromRegistry(s[1], ForgeRegistries.ATTRIBUTES);
+            Float value = ConfigUtil.parseFloat(s[2], v, "entity.modifiers", e -> true, "");
+            AttributeModifier.Operation operation = AttributeModifier.Operation.byId(ConfigUtil.parseInt(s[3], v, "entity.modifiers", e -> e > -1 && e < 3, "Operation must be 0, 1 or 2"));
+            if (type == null || attribute == null || value == null || operation == null) continue;
+            Map<Attribute, List<AttributeModifier>> modifierMap = result.getOrDefault(type, new HashMap<>());
+            List<AttributeModifier> modifiers = modifierMap.getOrDefault(attribute, new ArrayList<>());
+            modifiers.add(new AttributeModifier(attribute.getAttributeName(), value, operation));
+            modifierMap.put(attribute, modifiers);
+            result.put(type, modifierMap);
+        }
+        return result;
     }
 }
