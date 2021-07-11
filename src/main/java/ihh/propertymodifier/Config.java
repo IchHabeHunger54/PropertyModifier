@@ -5,7 +5,6 @@ import com.google.common.collect.Lists;
 import net.minecraft.block.Block;
 import net.minecraft.block.SoundType;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.inventory.CreativeScreen;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentType;
 import net.minecraft.entity.ai.attributes.Attribute;
@@ -25,14 +24,10 @@ import net.minecraft.util.LazyValue;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ToolType;
 import net.minecraftforge.registries.ForgeRegistries;
-import org.antlr.v4.runtime.misc.Pair;
-import org.antlr.v4.runtime.misc.Triple;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +48,7 @@ public final class Config {
     public static final Map<Item, Integer> MIXIN_ENCHANTABILITY = new HashMap<>();
     public static final Map<Item, LazyValue<Ingredient>> MIXIN_REPAIR_MATERIAL = new HashMap<>();
     public static final Map<TieredItem, Integer> MIXIN_TOOL_HARVEST_LEVEL = new HashMap<>();
+/*
     public static final Map<Enchantment, Integer> MIXIN_MAX_LEVEL = new HashMap<>();
     public static final Map<Enchantment, Pair<Integer, Integer>> MIXIN_MIN_ENCHANTABILITY = new HashMap<>();
     public static final Map<Enchantment, Triple<Integer, Integer, Boolean>> MIXIN_MAX_ENCHANTABILITY = new HashMap<>();
@@ -60,6 +56,7 @@ public final class Config {
     public static final Map<Enchantment, Boolean> MIXIN_CAN_VILLAGER_TRADE = new HashMap<>();
     public static final Map<Enchantment, Boolean> MIXIN_CAN_GENERATE_IN_LOOT = new HashMap<>();
     public static final Map<Enchantment, HashSet<Enchantment>> MIXIN_CAN_COMBINE = new HashMap<>();
+*/
     static ForgeConfigSpec SPEC;
     static ForgeConfigSpec.BooleanValue LOG_SUCCESSFUL;
     static ForgeConfigSpec.BooleanValue LOG_ERRORS;
@@ -544,7 +541,8 @@ public final class Config {
         for (Enchantment enchantment : ENCHANTMENTS.keySet()) {
             Properties.Enchantment prop = ENCHANTMENTS.get(enchantment);
             if (prop.RARITY != null) enchantment.rarity = prop.RARITY;
-            //TODO fix
+            //TODO
+/*
             if (prop.MAX_LEVEL != null) MIXIN_MAX_LEVEL.put(enchantment, prop.MAX_LEVEL);
             if (prop.MIN_ENCHANTABILITY != null) MIXIN_MIN_ENCHANTABILITY.put(enchantment, prop.MIN_ENCHANTABILITY);
             if (prop.MAX_ENCHANTABILITY != null) MIXIN_MAX_ENCHANTABILITY.put(enchantment, prop.MAX_ENCHANTABILITY);
@@ -552,6 +550,7 @@ public final class Config {
             if (prop.CAN_VILLAGER_TRADE != null) MIXIN_CAN_VILLAGER_TRADE.put(enchantment, prop.CAN_VILLAGER_TRADE);
             if (prop.CAN_GENERATE_IN_LOOT != null) MIXIN_CAN_GENERATE_IN_LOOT.put(enchantment, prop.CAN_GENERATE_IN_LOOT);
             if (prop.INCOMPATIBLES != null) MIXIN_CAN_COMBINE.put(enchantment, prop.INCOMPATIBLES);
+*/
         }
         for (Item item : ForgeRegistries.ITEMS)
             if (item.group != null && item.group.getPath().equals("none")) item.group = null;
@@ -578,7 +577,6 @@ public final class Config {
         }
         ItemGroup.BUILDING_BLOCKS.index = 0;
         dump(DUMP_BLOCKS_AFTER, DUMP_BLOCKS_AFTER_NON_DEFAULT, DUMP_ITEMS_AFTER, DUMP_ITEMS_AFTER_NON_DEFAULT, DUMP_ENCHANTMENTS_AFTER, DUMP_GROUPS_AFTER);
-        if (searchReload) Minecraft.getInstance().populateSearchTreeManager();
     }
 
     private static void dump(ForgeConfigSpec.BooleanValue blocks, ForgeConfigSpec.BooleanValue blocksNonDefault, ForgeConfigSpec.BooleanValue items, ForgeConfigSpec.BooleanValue itemsNonDefault, ForgeConfigSpec.BooleanValue enchantments, ForgeConfigSpec.BooleanValue groups) {
@@ -759,5 +757,9 @@ public final class Config {
 
     private static Properties.Item itemProperties(Item item) {
         return item instanceof ArmorItem ? new Properties.Armor() : item instanceof TieredItem || item instanceof TridentItem ? new Properties.Tool() : new Properties.Item();
+    }
+
+    static void searchReload() {
+        if (searchReload) Minecraft.getInstance().populateSearchTreeManager();
     }
 }

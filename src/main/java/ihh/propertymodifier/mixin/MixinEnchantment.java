@@ -1,16 +1,12 @@
 package ihh.propertymodifier.mixin;
 
-import ihh.propertymodifier.Config;
 import net.minecraft.enchantment.Enchantment;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-//TODO fix
+//TODO
 @Mixin(Enchantment.class)
 public abstract class MixinEnchantment {
+/*
     @Shadow public abstract int getMinEnchantability(int enchantmentLevel);
 
     @Inject(at = @At("HEAD"), method = "getMaxLevel()I", cancellable = true)
@@ -48,4 +44,5 @@ public abstract class MixinEnchantment {
         if (Config.MIXIN_CAN_GENERATE_IN_LOOT.containsKey(this))
             callback.setReturnValue(Config.MIXIN_CAN_GENERATE_IN_LOOT.get(this));
     }
+*/
 }

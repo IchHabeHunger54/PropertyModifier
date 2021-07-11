@@ -3,7 +3,9 @@ package ihh.propertymodifier;
 import net.minecraft.entity.MobEntity;
 import net.minecraft.entity.ai.attributes.Attribute;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
+import net.minecraft.entity.ai.attributes.AttributeModifierMap;
 import net.minecraft.entity.ai.attributes.Attributes;
+import net.minecraft.entity.ai.attributes.ModifiableAttributeInstance;
 import net.minecraft.item.AxeItem;
 import net.minecraft.item.HoeItem;
 import net.minecraft.item.ShovelItem;
@@ -57,7 +59,11 @@ public final class EventHandler {
             MobEntity l = (MobEntity) e.getEntity();
             if (ServerConfig.MODIFIERS.containsKey(l.getType()))
                 for (Map.Entry<Attribute, List<AttributeModifier>> m : ServerConfig.MODIFIERS.get(l.getType()).entrySet()) {
-                    for (AttributeModifier a : m.getValue()) l.getAttribute(m.getKey()).applyPersistentModifier(a);
+                    for (AttributeModifier a : m.getValue()) {
+                        ModifiableAttributeInstance t = l.getAttribute(m.getKey());
+                        if (t == null) t = new ModifiableAttributeInstance(m.getKey(), x -> {});
+                        t.applyPersistentModifier(a);
+                    }
                     if (m.getKey() == Attributes.MAX_HEALTH) l.setHealth(l.getMaxHealth());
                 }
             l.getPersistentData().putBoolean("alreadyAppliedAttributes", true);

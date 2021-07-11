@@ -5,7 +5,9 @@ import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tags.ITag;
 import net.minecraft.tags.ItemTags;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -36,5 +38,6 @@ public final class PropertyModifier {
         if (ModList.get().isLoaded("jei")) FMLJavaModLoadingContext.get().getModEventBus().<FMLCommonSetupEvent>addListener(EventPriority.LOWEST, e -> Config.workCreative());
         else FMLJavaModLoadingContext.get().getModEventBus().<FMLLoadCompleteEvent>addListener(EventPriority.LOWEST, e -> Config.workCreative());
         FMLJavaModLoadingContext.get().getModEventBus().<FMLLoadCompleteEvent>addListener(EventPriority.LOWEST, e -> Config.work());
+        DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> Config::searchReload);
     }
 }
