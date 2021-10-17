@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nonnull;
 
-@SuppressWarnings({"ConstantConditions", "FieldMayBeFinal"})
+@SuppressWarnings({"ConstantConditions", "FieldMayBeFinal", "CommentedOutCode", "DuplicatedCode"})
 public final class Config {
     private static final Map<Block, Properties.Block> BLOCKS = new LinkedHashMap<>();
     private static final Map<Item, Properties.Item> ITEMS = new LinkedHashMap<>();
@@ -48,15 +48,15 @@ public final class Config {
     public static final Map<Item, Integer> MIXIN_ENCHANTABILITY = new HashMap<>();
     public static final Map<Item, LazyValue<Ingredient>> MIXIN_REPAIR_MATERIAL = new HashMap<>();
     public static final Map<TieredItem, Integer> MIXIN_TOOL_HARVEST_LEVEL = new HashMap<>();
-/*
-    public static final Map<Enchantment, Integer> MIXIN_MAX_LEVEL = new HashMap<>();
-    public static final Map<Enchantment, Pair<Integer, Integer>> MIXIN_MIN_ENCHANTABILITY = new HashMap<>();
-    public static final Map<Enchantment, Triple<Integer, Integer, Boolean>> MIXIN_MAX_ENCHANTABILITY = new HashMap<>();
-    public static final Map<Enchantment, Boolean> MIXIN_IS_TREASURE = new HashMap<>();
-    public static final Map<Enchantment, Boolean> MIXIN_CAN_VILLAGER_TRADE = new HashMap<>();
-    public static final Map<Enchantment, Boolean> MIXIN_CAN_GENERATE_IN_LOOT = new HashMap<>();
-    public static final Map<Enchantment, HashSet<Enchantment>> MIXIN_CAN_COMBINE = new HashMap<>();
-*/
+    /*
+        public static final Map<Enchantment, Integer> MIXIN_MAX_LEVEL = new HashMap<>();
+        public static final Map<Enchantment, Pair<Integer, Integer>> MIXIN_MIN_ENCHANTABILITY = new HashMap<>();
+        public static final Map<Enchantment, Triple<Integer, Integer, Boolean>> MIXIN_MAX_ENCHANTABILITY = new HashMap<>();
+        public static final Map<Enchantment, Boolean> MIXIN_IS_TREASURE = new HashMap<>();
+        public static final Map<Enchantment, Boolean> MIXIN_CAN_VILLAGER_TRADE = new HashMap<>();
+        public static final Map<Enchantment, Boolean> MIXIN_CAN_GENERATE_IN_LOOT = new HashMap<>();
+        public static final Map<Enchantment, HashSet<Enchantment>> MIXIN_CAN_COMBINE = new HashMap<>();
+    */
     static ForgeConfigSpec SPEC;
     static ForgeConfigSpec.BooleanValue LOG_SUCCESSFUL;
     static ForgeConfigSpec.BooleanValue LOG_ERRORS;
@@ -73,7 +73,7 @@ public final class Config {
     private static ForgeConfigSpec.BooleanValue DUMP_ENCHANTMENTS_AFTER;
     private static ForgeConfigSpec.BooleanValue DUMP_GROUPS;
     private static ForgeConfigSpec.BooleanValue DUMP_GROUPS_AFTER;
-    private static ForgeConfigSpec.IntValue DEFAULT_ENCHANTABILITY;
+    static ForgeConfigSpec.IntValue DEFAULT_ENCHANTABILITY;
     private static ForgeConfigSpec.ConfigValue<List<String>> ITEM_GROUP;
     private static ForgeConfigSpec.ConfigValue<List<String>> HARDNESS;
     private static ForgeConfigSpec.ConfigValue<List<String>> RESISTANCE;
@@ -99,18 +99,18 @@ public final class Config {
     private static ForgeConfigSpec.ConfigValue<List<String>> ATTACK_DAMAGE;
     private static ForgeConfigSpec.ConfigValue<List<String>> ATTACK_SPEED;
     private static ForgeConfigSpec.ConfigValue<List<String>> EFFICIENCY;
-/*
-    private static ForgeConfigSpec.ConfigValue<List<String>> MAX_LEVEL;
-    private static ForgeConfigSpec.ConfigValue<List<String>> MIN_ENCHANTABILITY;
-    private static ForgeConfigSpec.ConfigValue<List<String>> MAX_ENCHANTABILITY;
-    private static ForgeConfigSpec.ConfigValue<List<String>> IS_TREASURE;
-    private static ForgeConfigSpec.ConfigValue<List<String>> CAN_VILLAGER_TRADE;
-    private static ForgeConfigSpec.ConfigValue<List<String>> CAN_GENERATE_IN_LOOT;
-*/
+    /*
+        private static ForgeConfigSpec.ConfigValue<List<String>> MAX_LEVEL;
+        private static ForgeConfigSpec.ConfigValue<List<String>> MIN_ENCHANTABILITY;
+        private static ForgeConfigSpec.ConfigValue<List<String>> MAX_ENCHANTABILITY;
+        private static ForgeConfigSpec.ConfigValue<List<String>> IS_TREASURE;
+        private static ForgeConfigSpec.ConfigValue<List<String>> CAN_VILLAGER_TRADE;
+        private static ForgeConfigSpec.ConfigValue<List<String>> CAN_GENERATE_IN_LOOT;
+    */
     private static ForgeConfigSpec.ConfigValue<List<String>> ENCHANTMENT_RARITY;
-/*
-    private static ForgeConfigSpec.ConfigValue<List<String>> CAN_COMBINE;
-*/
+    /*
+        private static ForgeConfigSpec.ConfigValue<List<String>> CAN_COMBINE;
+    */
     private static ForgeConfigSpec.ConfigValue<List<String>> ENCHANTMENT_ITEM_GROUP;
     private static ForgeConfigSpec.BooleanValue REMOVE_ENCHANTMENT_ITEM_GROUPS;
     private static boolean searchReload = false;
@@ -202,203 +202,203 @@ public final class Config {
         ARMOR_REGISTRY.removeIf(e -> !(e instanceof ArmorItem));
         TIERED_REGISTRY.removeIf(e -> !(e instanceof TieredItem) && !(e instanceof TridentItem));
         TOOL_REGISTRY.removeIf(e -> !(e instanceof ToolItem));
-        dump(DUMP_BLOCKS, DUMP_BLOCKS_NON_DEFAULT, DUMP_ITEMS, DUMP_ITEMS_NON_DEFAULT, DUMP_ENCHANTMENTS, DUMP_GROUPS);
+        dump(DUMP_BLOCKS.get(), DUMP_BLOCKS_NON_DEFAULT.get(), DUMP_ITEMS.get(), DUMP_ITEMS_NON_DEFAULT.get(), DUMP_ENCHANTMENTS.get(), DUMP_GROUPS.get());
         if (REMOVE_ENCHANTMENT_ITEM_GROUPS.get())
-            for (ItemGroup g : ItemGroup.GROUPS)
-                g.setRelevantEnchantmentTypes();
-        LinkedHashMap<String, ItemStack> m = new LinkedHashMap<>();
-        for (String v : ITEM_GROUP.get()) {
-            String[] s = v.split(";");
-            Item i = ConfigUtil.fromRegistry(s[1], ITEM_REGISTRY);
-            if (!s[0].equals("none")) m.put(s[0], i == null ? ItemStack.EMPTY : new ItemStack(i));
-            else Logger.error("Cannot use none as an item group id (is invalid for " + v + " in item_groups.item_group");
+            for (ItemGroup group : ItemGroup.GROUPS)
+                group.setRelevantEnchantmentTypes();
+        LinkedHashMap<String, ItemStack> map = new LinkedHashMap<>();
+        for (String group : ITEM_GROUP.get()) {
+            String[] s = group.split(";");
+            Item i = ConfigUtil.fromCollection(s[1], ITEM_REGISTRY);
+            if (!s[0].equals("none")) map.put(s[0], i == null ? ItemStack.EMPTY : new ItemStack(i));
+            else
+                Logger.error("Cannot use none as an item group id (is invalid for " + group + " in item_groups.item_group");
         }
-        for (Map.Entry<String, ItemStack> t : m.entrySet())
-            new ItemGroup(t.getKey()) {
+        for (Map.Entry<String, ItemStack> entry : map.entrySet())
+            new ItemGroup(entry.getKey()) {
                 @Override
                 @Nonnull
                 public ItemStack createIcon() {
-                    return t.getValue();
+                    return entry.getValue();
                 }
             };
-        for (Map.Entry<Block, Float> entry : ConfigUtil.getMap(HARDNESS, BLOCK_REGISTRY, ConfigUtil::parseFloat, e -> e >= 0 || e == -1, "Hardness must be either -1, 0 or greater than 0").entrySet()) {
+        for (Map.Entry<Block, Float> entry : ConfigUtil.getMap(HARDNESS, BLOCK_REGISTRY, ParsingUtil::parseFloat, e -> e >= 0 || e == -1).entrySet()) {
             Properties.Block prop = BLOCKS.getOrDefault(entry.getKey(), new Properties.Block());
             prop.HARDNESS = entry.getValue();
             BLOCKS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Block, Float> entry : ConfigUtil.getMap(RESISTANCE, BLOCK_REGISTRY, ConfigUtil::parseFloat, e -> e >= 0 && e <= 3600000, "Resistance must be between 0 and 3600000").entrySet()) {
+        for (Map.Entry<Block, Float> entry : ConfigUtil.getMap(RESISTANCE, BLOCK_REGISTRY, ParsingUtil::parseFloat, e -> e >= 0 && e <= 3600000).entrySet()) {
             Properties.Block prop = BLOCKS.getOrDefault(entry.getKey(), new Properties.Block());
             prop.RESISTANCE = entry.getValue();
             BLOCKS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Block, Integer> entry : ConfigUtil.getMap(HARVEST_LEVEL, BLOCK_REGISTRY, ConfigUtil::parseInt, e -> e > -2, "Harvest level must be at least -1").entrySet()) {
+        for (Map.Entry<Block, Integer> entry : ConfigUtil.getMap(HARVEST_LEVEL, BLOCK_REGISTRY, ParsingUtil::parseInt, e -> e > -2).entrySet()) {
             Properties.Block prop = BLOCKS.getOrDefault(entry.getKey(), new Properties.Block());
             prop.HARVEST_LEVEL = entry.getValue();
             BLOCKS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Block, ToolType> entry : ConfigUtil.getMap(HARVEST_TOOL, BLOCK_REGISTRY, ConfigUtil::parseToolType, e -> true, "").entrySet()) {
+        for (Map.Entry<Block, ToolType> entry : ConfigUtil.getMap(HARVEST_TOOL, BLOCK_REGISTRY, ParsingUtil::parseToolType, e -> true).entrySet()) {
             Properties.Block prop = BLOCKS.getOrDefault(entry.getKey(), new Properties.Block());
             prop.HARVEST_TOOL = entry.getValue();
             BLOCKS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Block, Boolean> entry : ConfigUtil.getMap(REQUIRES_TOOL, BLOCK_REGISTRY, ConfigUtil::parseBoolean, e -> true, "").entrySet()) {
+        for (Map.Entry<Block, Boolean> entry : ConfigUtil.getMap(REQUIRES_TOOL, BLOCK_REGISTRY, ParsingUtil::parseBoolean, e -> true).entrySet()) {
             Properties.Block prop = BLOCKS.getOrDefault(entry.getKey(), new Properties.Block());
             prop.REQUIRES_TOOL = entry.getValue();
             BLOCKS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Block, Integer> entry : ConfigUtil.getMap(LIGHT_LEVEL, BLOCK_REGISTRY, ConfigUtil::parseInt, e -> e > -1 && e < 16, "Light level must be between 0 and 15").entrySet()) {
+        for (Map.Entry<Block, Integer> entry : ConfigUtil.getMap(LIGHT_LEVEL, BLOCK_REGISTRY, ParsingUtil::parseInt, e -> e > -1 && e < 16).entrySet()) {
             Properties.Block prop = BLOCKS.getOrDefault(entry.getKey(), new Properties.Block());
             prop.LIGHT_LEVEL = entry.getValue();
             BLOCKS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Block, Float> entry : ConfigUtil.getMap(SLIPPERINESS, BLOCK_REGISTRY, ConfigUtil::parseFloat, e -> e >= 0, "Slipperiness must be at least 0").entrySet()) {
+        for (Map.Entry<Block, Float> entry : ConfigUtil.getMap(SLIPPERINESS, BLOCK_REGISTRY, ParsingUtil::parseFloat, e -> e >= 0).entrySet()) {
             Properties.Block prop = BLOCKS.getOrDefault(entry.getKey(), new Properties.Block());
             prop.SLIPPERINESS = entry.getValue();
             BLOCKS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Block, Float> entry : ConfigUtil.getMap(SPEED_FACTOR, BLOCK_REGISTRY, ConfigUtil::parseFloat, e -> e >= 0, "Speed factor must be at least 0").entrySet()) {
+        for (Map.Entry<Block, Float> entry : ConfigUtil.getMap(SPEED_FACTOR, BLOCK_REGISTRY, ParsingUtil::parseFloat, e -> e >= 0).entrySet()) {
             Properties.Block prop = BLOCKS.getOrDefault(entry.getKey(), new Properties.Block());
             prop.SPEED_FACTOR = entry.getValue();
             BLOCKS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Block, Float> entry : ConfigUtil.getMap(JUMP_FACTOR, BLOCK_REGISTRY, ConfigUtil::parseFloat, e -> e >= 0, "Jump factor must be at least 0").entrySet()) {
+        for (Map.Entry<Block, Float> entry : ConfigUtil.getMap(JUMP_FACTOR, BLOCK_REGISTRY, ParsingUtil::parseFloat, e -> e >= 0).entrySet()) {
             Properties.Block prop = BLOCKS.getOrDefault(entry.getKey(), new Properties.Block());
             prop.JUMP_FACTOR = entry.getValue();
             BLOCKS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Block, SoundType> entry : ConfigUtil.getMap(SOUND_TYPE, BLOCK_REGISTRY, ConfigUtil::parseSoundType, e -> true, "").entrySet()) {
+        for (Map.Entry<Block, SoundType> entry : ConfigUtil.getMap(SOUND_TYPE, BLOCK_REGISTRY, ParsingUtil::parseSoundType, e -> true).entrySet()) {
             Properties.Block prop = BLOCKS.getOrDefault(entry.getKey(), new Properties.Block());
             prop.SOUND_TYPE = entry.getValue();
             BLOCKS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Item, Integer> entry : ConfigUtil.getMap(MAX_DAMAGE, ITEM_REGISTRY, ConfigUtil::parseInt, e -> e > 0, "Durability must be at least 1").entrySet()) {
+        for (Map.Entry<Item, Integer> entry : ConfigUtil.getMap(MAX_DAMAGE, ITEM_REGISTRY, ParsingUtil::parseInt, e -> e > 0).entrySet()) {
             Properties.Item prop = ITEMS.getOrDefault(entry.getKey(), itemProperties(entry.getKey()));
             prop.MAX_DAMAGE = entry.getValue();
             ITEMS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Item, Integer> entry : ConfigUtil.getMap(MAX_STACK_SIZE, ITEM_REGISTRY, ConfigUtil::parseInt, e -> e > 0, "Max stack size must be at least 1").entrySet()) {
+        for (Map.Entry<Item, Integer> entry : ConfigUtil.getMap(MAX_STACK_SIZE, ITEM_REGISTRY, ParsingUtil::parseInt, e -> e > 0).entrySet()) {
             Properties.Item prop = ITEMS.getOrDefault(entry.getKey(), itemProperties(entry.getKey()));
             prop.MAX_STACK_SIZE = entry.getValue();
             ITEMS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Item, ItemGroup> entry : ConfigUtil.getMap(GROUP, ITEM_REGISTRY, ConfigUtil::parseItemGroup, e -> true, "").entrySet()) {
+        for (Map.Entry<Item, ItemGroup> entry : ConfigUtil.getMap(GROUP, ITEM_REGISTRY, ParsingUtil::parseItemGroup, e -> true).entrySet()) {
             Properties.Item prop = ITEMS.getOrDefault(entry.getKey(), itemProperties(entry.getKey()));
             prop.GROUP = entry.getValue();
             ITEMS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Item, Boolean> entry : ConfigUtil.getMap(IS_IMMUNE_TO_FIRE, ITEM_REGISTRY, ConfigUtil::parseBoolean, e -> true, "").entrySet()) {
+        for (Map.Entry<Item, Boolean> entry : ConfigUtil.getMap(IS_IMMUNE_TO_FIRE, ITEM_REGISTRY, ParsingUtil::parseBoolean, e -> true).entrySet()) {
             Properties.Item prop = ITEMS.getOrDefault(entry.getKey(), itemProperties(entry.getKey()));
             prop.IS_IMMUNE_TO_FIRE = entry.getValue();
             ITEMS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Item, Rarity> entry : ConfigUtil.getMap(RARITY, ITEM_REGISTRY, ConfigUtil::parseRarity, e -> true, "").entrySet()) {
+        for (Map.Entry<Item, Rarity> entry : ConfigUtil.getMap(RARITY, ITEM_REGISTRY, ParsingUtil::parseRarity, e -> true).entrySet()) {
             Properties.Item prop = ITEMS.getOrDefault(entry.getKey(), itemProperties(entry.getKey()));
             prop.RARITY = entry.getValue();
             ITEMS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Item, Integer> entry : ConfigUtil.getMap(ENCHANTABILITY, ITEM_REGISTRY, ConfigUtil::parseInt, e -> e > -1, "Enchantability must be at least 0").entrySet()) {
+        for (Map.Entry<Item, Integer> entry : ConfigUtil.getMap(ENCHANTABILITY, ITEM_REGISTRY, ParsingUtil::parseInt, e -> e > -1).entrySet()) {
             Properties.Item prop = ITEMS.getOrDefault(entry.getKey(), itemProperties(entry.getKey()));
             prop.ENCHANTABILITY = entry.getValue();
             ITEMS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Item, LazyValue<Ingredient>> entry : ConfigUtil.getMap(REPAIR_MATERIAL, ITEM_REGISTRY, ConfigUtil::parseRepairMaterial, e -> true, "").entrySet()) {
+        for (Map.Entry<Item, LazyValue<Ingredient>> entry : ConfigUtil.getMap(REPAIR_MATERIAL, ITEM_REGISTRY, ParsingUtil::parseRepairMaterial, e -> true).entrySet()) {
             Properties.Item prop = ITEMS.getOrDefault(entry.getKey(), itemProperties(entry.getKey()));
             prop.REPAIR_MATERIAL = entry.getValue();
             ITEMS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Item, Integer> entry : ConfigUtil.getMap(ARMOR, ARMOR_REGISTRY, ConfigUtil::parseInt, e -> e > -1, "Armor must be at least 0").entrySet()) {
+        for (Map.Entry<Item, Integer> entry : ConfigUtil.getMap(ARMOR, ARMOR_REGISTRY, ParsingUtil::parseInt, e -> e > -1).entrySet()) {
             Properties.Item prop = ITEMS.getOrDefault(entry.getKey(), new Properties.Armor());
             ((Properties.Armor) prop).ARMOR = entry.getValue();
             ITEMS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Item, Float> entry : ConfigUtil.getMap(TOUGHNESS, ARMOR_REGISTRY, ConfigUtil::parseFloat, e -> e >= 0, "Toughness must be at least 0").entrySet()) {
+        for (Map.Entry<Item, Float> entry : ConfigUtil.getMap(TOUGHNESS, ARMOR_REGISTRY, ParsingUtil::parseFloat, e -> e >= 0).entrySet()) {
             Properties.Item prop = ITEMS.getOrDefault(entry.getKey(), new Properties.Armor());
             ((Properties.Armor) prop).TOUGHNESS = entry.getValue();
             ITEMS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Item, Float> entry : ConfigUtil.getMap(KNOCKBACK_RESISTANCE, ARMOR_REGISTRY, ConfigUtil::parseFloat, e -> e >= 0, "Knockback resistance must be at least 0").entrySet()) {
+        for (Map.Entry<Item, Float> entry : ConfigUtil.getMap(KNOCKBACK_RESISTANCE, ARMOR_REGISTRY, ParsingUtil::parseFloat, e -> e >= 0).entrySet()) {
             Properties.Item prop = ITEMS.getOrDefault(entry.getKey(), new Properties.Armor());
             ((Properties.Armor) prop).KNOCKBACK_RESISTANCE = entry.getValue();
             ITEMS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Item, Float> entry : ConfigUtil.getMap(ATTACK_DAMAGE, TIERED_REGISTRY, ConfigUtil::parseFloat, e -> e >= 0, "Attack damage must be at least 0").entrySet()) {
+        for (Map.Entry<Item, Float> entry : ConfigUtil.getMap(ATTACK_DAMAGE, TIERED_REGISTRY, ParsingUtil::parseFloat, e -> e >= 0).entrySet()) {
             Properties.Item prop = ITEMS.getOrDefault(entry.getKey(), new Properties.Tool());
             ((Properties.Tool) prop).ATTACK_DAMAGE = entry.getValue();
             ITEMS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Item, Float> entry : ConfigUtil.getMap(ATTACK_SPEED, TIERED_REGISTRY, ConfigUtil::parseFloat, e -> e >= 0, "Attack speed must be at least 0").entrySet()) {
+        for (Map.Entry<Item, Float> entry : ConfigUtil.getMap(ATTACK_SPEED, TIERED_REGISTRY, ParsingUtil::parseFloat, e -> e >= 0).entrySet()) {
             Properties.Item prop = ITEMS.getOrDefault(entry.getKey(), new Properties.Tool());
             ((Properties.Tool) prop).ATTACK_SPEED = entry.getValue();
             ITEMS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Item, Integer> entry : ConfigUtil.getMap(TOOL_HARVEST_LEVEL, TOOL_REGISTRY, ConfigUtil::parseInt, e -> e > -2, "Harvest level must be at least -1").entrySet()) {
+        for (Map.Entry<Item, Integer> entry : ConfigUtil.getMap(TOOL_HARVEST_LEVEL, TOOL_REGISTRY, ParsingUtil::parseInt, e -> e > -2).entrySet()) {
             Properties.Item prop = ITEMS.getOrDefault(entry.getKey(), new Properties.Tool());
             ((Properties.Tool) prop).HARVEST_LEVEL = entry.getValue();
             ITEMS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Item, Float> entry : ConfigUtil.getMap(EFFICIENCY, TOOL_REGISTRY, ConfigUtil::parseFloat, e -> e >= 0, "Efficiency must be at least 0").entrySet()) {
+        for (Map.Entry<Item, Float> entry : ConfigUtil.getMap(EFFICIENCY, TOOL_REGISTRY, ParsingUtil::parseFloat, e -> e >= 0).entrySet()) {
             Properties.Item prop = ITEMS.getOrDefault(entry.getKey(), new Properties.Tool());
             ((Properties.Tool) prop).EFFICIENCY = entry.getValue();
             ITEMS.put(entry.getKey(), prop);
         }
 /*
-        for (Map.Entry<Enchantment, Integer> entry : ConfigUtil.getMap(MAX_LEVEL, ENCHANTMENT_REGISTRY, ConfigUtil::parseInt, e -> e > 0, "Max level must be at least 1").entrySet()) {
+        for (Map.Entry<Enchantment, Integer> entry : ConfigUtil.getMap(MAX_LEVEL, ENCHANTMENT_REGISTRY, ParsingUtil::parseInt, e -> e > 0).entrySet()) {
             Properties.Enchantment prop = ENCHANTMENTS.getOrDefault(entry.getKey(), new Properties.Enchantment());
             prop.MAX_LEVEL = entry.getValue();
             ENCHANTMENTS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Enchantment, Pair<Integer, Integer>> entry : ConfigUtil.pairMap(MIN_ENCHANTABILITY, ENCHANTMENT_REGISTRY, ConfigUtil::parseInt, e -> true, ConfigUtil::parseInt, e -> true).entrySet()) {
+        for (Map.Entry<Enchantment, Pair<Integer, Integer>> entry : ConfigUtil.pairMap(MIN_ENCHANTABILITY, ENCHANTMENT_REGISTRY, ParsingUtil::parseInt, e -> true, ParsingUtil::parseInt, e -> true).entrySet()) {
             Properties.Enchantment prop = ENCHANTMENTS.getOrDefault(entry.getKey(), new Properties.Enchantment());
             prop.MIN_ENCHANTABILITY = entry.getValue();
             ENCHANTMENTS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Enchantment, Triple<Integer, Integer, Boolean>> entry : ConfigUtil.tripleMap(MAX_ENCHANTABILITY, ENCHANTMENT_REGISTRY, ConfigUtil::parseInt, e -> true, ConfigUtil::parseInt, e -> true, ConfigUtil::parseBoolean, e -> true).entrySet()) {
+        for (Map.Entry<Enchantment, Triple<Integer, Integer, Boolean>> entry : ConfigUtil.tripleMap(MAX_ENCHANTABILITY, ENCHANTMENT_REGISTRY, ParsingUtil::parseInt, e -> true, ParsingUtil::parseInt, e -> true, ParsingUtil::parseBoolean, e -> true).entrySet()) {
             Properties.Enchantment prop = ENCHANTMENTS.getOrDefault(entry.getKey(), new Properties.Enchantment());
             prop.MAX_ENCHANTABILITY = entry.getValue();
             ENCHANTMENTS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Enchantment, Boolean> entry : ConfigUtil.getMap(IS_TREASURE, ENCHANTMENT_REGISTRY, ConfigUtil::parseBoolean, e -> true, "").entrySet()) {
+        for (Map.Entry<Enchantment, Boolean> entry : ConfigUtil.getMap(IS_TREASURE, ENCHANTMENT_REGISTRY, ParsingUtil::parseBoolean, e -> true).entrySet()) {
             Properties.Enchantment prop = ENCHANTMENTS.getOrDefault(entry.getKey(), new Properties.Enchantment());
             prop.IS_TREASURE = entry.getValue();
             ENCHANTMENTS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Enchantment, Boolean> entry : ConfigUtil.getMap(CAN_VILLAGER_TRADE, ENCHANTMENT_REGISTRY, ConfigUtil::parseBoolean, e -> true, "").entrySet()) {
+        for (Map.Entry<Enchantment, Boolean> entry : ConfigUtil.getMap(CAN_VILLAGER_TRADE, ENCHANTMENT_REGISTRY, ParsingUtil::parseBoolean, e -> true).entrySet()) {
             Properties.Enchantment prop = ENCHANTMENTS.getOrDefault(entry.getKey(), new Properties.Enchantment());
             prop.CAN_VILLAGER_TRADE = entry.getValue();
             ENCHANTMENTS.put(entry.getKey(), prop);
         }
-        for (Map.Entry<Enchantment, Boolean> entry : ConfigUtil.getMap(CAN_GENERATE_IN_LOOT, ENCHANTMENT_REGISTRY, ConfigUtil::parseBoolean, e -> true, "").entrySet()) {
+        for (Map.Entry<Enchantment, Boolean> entry : ConfigUtil.getMap(CAN_GENERATE_IN_LOOT, ENCHANTMENT_REGISTRY, ParsingUtil::parseBoolean, e -> true).entrySet()) {
             Properties.Enchantment prop = ENCHANTMENTS.getOrDefault(entry.getKey(), new Properties.Enchantment());
             prop.CAN_GENERATE_IN_LOOT = entry.getValue();
             ENCHANTMENTS.put(entry.getKey(), prop);
         }
 */
-        for (Map.Entry<Enchantment, Enchantment.Rarity> entry : ConfigUtil.getMap(ENCHANTMENT_RARITY, ENCHANTMENT_REGISTRY, ConfigUtil::parseEnchantmentRarity, e -> true, "").entrySet()) {
+        for (Map.Entry<Enchantment, Enchantment.Rarity> entry : ConfigUtil.getMap(ENCHANTMENT_RARITY, ENCHANTMENT_REGISTRY, ParsingUtil::parseEnchantmentRarity, e -> true).entrySet()) {
             Properties.Enchantment prop = ENCHANTMENTS.getOrDefault(entry.getKey(), new Properties.Enchantment());
             prop.RARITY = entry.getValue();
             ENCHANTMENTS.put(entry.getKey(), prop);
         }
 /*
-        for (Map.Entry<Enchantment, Enchantment> entry : ConfigUtil.getMap(CAN_COMBINE, ENCHANTMENT_REGISTRY, ConfigUtil::parseEnchantment, e -> true, "").entrySet()) {
+        for (Map.Entry<Enchantment, Enchantment> entry : ConfigUtil.getMap(CAN_COMBINE, ENCHANTMENT_REGISTRY, ParsingUtil::parseEnchantment, e -> true, "").entrySet()) {
             Properties.Enchantment prop = ENCHANTMENTS.getOrDefault(entry.getKey(), new Properties.Enchantment());
             if (prop.INCOMPATIBLES == null) prop.INCOMPATIBLES = new HashSet<>();
             prop.INCOMPATIBLES.add(entry.getValue());
             ENCHANTMENTS.put(entry.getKey(), prop);
         }
 */
-        for (String v : ENCHANTMENT_ITEM_GROUP.get()) {
-            String[] s = v.split(";");
+        for (String s : ENCHANTMENT_ITEM_GROUP.get()) {
+            String[] array = s.split(";");
             try {
-                EnchantmentType t = EnchantmentType.valueOf(s[0].toUpperCase());
-                ItemGroup g = ConfigUtil.parseItemGroup(s[1], v, ConfigUtil.getPath(ENCHANTMENT_ITEM_GROUP.getPath()), e -> true, "");
-                if (g != null) {
-                    List<EnchantmentType> l = ENCHANTMENT_GROUPS.getOrDefault(g, new ArrayList<>());
-                    l.add(t);
-                    ENCHANTMENT_GROUPS.put(g, l);
-                } else
-                    Logger.error(s[1] + " is not an item group (is invalid for entry " + v + " in enchantment.group)");
+                EnchantmentType type = EnchantmentType.valueOf(array[0].toUpperCase());
+                ItemGroup group = ParsingUtil.parseItemGroup(array[1], s, ConfigUtil.getPath(ENCHANTMENT_ITEM_GROUP.getPath()), e -> true);
+                if (group != null) {
+                    List<EnchantmentType> list = ENCHANTMENT_GROUPS.getOrDefault(group, new ArrayList<>());
+                    list.add(type);
+                    ENCHANTMENT_GROUPS.put(group, list);
+                } else ConfigUtil.logInvalid(array[1], s, ConfigUtil.getPath(ENCHANTMENT_ITEM_GROUP.getPath()));
             } catch (IllegalArgumentException e) {
-                Logger.error("Unknown enchantment type " + s[0]);
+                ConfigUtil.logInvalid(array[0], s, ConfigUtil.getPath(ENCHANTMENT_ITEM_GROUP.getPath()));
             }
         }
     }
@@ -426,9 +426,9 @@ public final class Config {
             }
             if (prop.HARVEST_LEVEL != null)
                 try {
-                    Field bField = Block.class.getDeclaredField("harvestLevel");
-                    bField.setAccessible(true);
-                    bField.setInt(block, prop.HARVEST_LEVEL);
+                    Field f = Block.class.getDeclaredField("harvestLevel");
+                    f.setAccessible(true);
+                    f.setInt(block, prop.HARVEST_LEVEL);
                     block.properties = block.properties.harvestLevel(prop.HARVEST_LEVEL);
                     MIXIN_HARVEST_LEVEL.put(block, prop.HARVEST_LEVEL);
                 } catch (IllegalAccessException | NoSuchFieldException e) {
@@ -436,9 +436,9 @@ public final class Config {
                 }
             if (prop.HARVEST_TOOL != null)
                 try {
-                    Field bField = Block.class.getDeclaredField("harvestTool");
-                    bField.setAccessible(true);
-                    bField.set(block, prop.HARVEST_TOOL);
+                    Field f = Block.class.getDeclaredField("harvestTool");
+                    f.setAccessible(true);
+                    f.set(block, prop.HARVEST_TOOL);
                     block.properties = block.properties.harvestTool(prop.HARVEST_TOOL);
                     MIXIN_HARVEST_TOOL.put(block, prop.HARVEST_TOOL);
                 } catch (IllegalAccessException | NoSuchFieldException e) {
@@ -497,8 +497,7 @@ public final class Config {
                         builder.put(Attributes.KNOCKBACK_RESISTANCE, new AttributeModifier(uuid, "Armor knockback resistance", armoritem.knockbackResistance, AttributeModifier.Operation.ADDITION));
                     armoritem.field_234656_m_ = builder.build();
                 }
-            }
-            if (item instanceof TieredItem) {
+            } else if (item instanceof TieredItem) {
                 TieredItem toolitem = (TieredItem) item;
                 Properties.Tool toolprop = (Properties.Tool) prop;
                 if (toolprop.HARVEST_LEVEL != null)
@@ -506,11 +505,11 @@ public final class Config {
                 if (toolprop.EFFICIENCY != null && toolitem instanceof ToolItem)
                     ((ToolItem) toolitem).efficiency = toolprop.EFFICIENCY;
                 if (toolprop.ATTACK_DAMAGE != null || toolprop.ATTACK_SPEED != null) {
+                    ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
                     if (toolitem instanceof ToolItem) {
                         ToolItem tool = (ToolItem) toolitem;
-                        AttributeModifier speedAttr = tool.toolAttributes.get(Attributes.ATTACK_SPEED).stream().findFirst().orElse(null);
-                        double speed = toolprop.ATTACK_SPEED != null ? toolprop.ATTACK_SPEED - 4 : speedAttr != null ? speedAttr.getAmount() : 0;
-                        ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
+                        AttributeModifier speedMod = tool.toolAttributes.get(Attributes.ATTACK_SPEED).stream().findFirst().orElse(null);
+                        double speed = toolprop.ATTACK_SPEED != null ? toolprop.ATTACK_SPEED - 4 : speedMod != null ? speedMod.getAmount() : 0;
                         if (toolprop.ATTACK_DAMAGE != null) tool.attackDamage = toolprop.ATTACK_DAMAGE - 1;
                         builder.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.ATTACK_DAMAGE_MODIFIER, "Tool modifier", tool.attackDamage, AttributeModifier.Operation.ADDITION));
                         builder.put(Attributes.ATTACK_SPEED, new AttributeModifier(Item.ATTACK_SPEED_MODIFIER, "Tool modifier", speed, AttributeModifier.Operation.ADDITION));
@@ -518,9 +517,8 @@ public final class Config {
                     }
                     if (toolitem instanceof SwordItem) {
                         SwordItem sword = (SwordItem) toolitem;
-                        AttributeModifier speedAttr = sword.attributeModifiers.get(Attributes.ATTACK_SPEED).stream().findFirst().orElse(null);
-                        double speed = toolprop.ATTACK_SPEED != null ? toolprop.ATTACK_SPEED - 4 : speedAttr != null ? speedAttr.getAmount() : 0;
-                        ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
+                        AttributeModifier speedMod = sword.attributeModifiers.get(Attributes.ATTACK_SPEED).stream().findFirst().orElse(null);
+                        double speed = toolprop.ATTACK_SPEED != null ? toolprop.ATTACK_SPEED - 4 : speedMod != null ? speedMod.getAmount() : 0;
                         if (toolprop.ATTACK_DAMAGE != null) sword.attackDamage = toolprop.ATTACK_DAMAGE - 1;
                         builder.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.ATTACK_DAMAGE_MODIFIER, "Tool modifier", sword.attackDamage, AttributeModifier.Operation.ADDITION));
                         builder.put(Attributes.ATTACK_SPEED, new AttributeModifier(Item.ATTACK_SPEED_MODIFIER, "Tool modifier", speed, AttributeModifier.Operation.ADDITION));
@@ -530,18 +528,17 @@ public final class Config {
             } else if (item instanceof TridentItem) {
                 TridentItem trident = (TridentItem) item;
                 Properties.Tool toolprop = (Properties.Tool) prop;
-                AttributeModifier damageAttr = trident.tridentAttributes.get(Attributes.ATTACK_DAMAGE).stream().findFirst().orElse(null);
-                AttributeModifier speedAttr = trident.tridentAttributes.get(Attributes.ATTACK_SPEED).stream().findFirst().orElse(null);
+                AttributeModifier damageMod = trident.tridentAttributes.get(Attributes.ATTACK_DAMAGE).stream().findFirst().orElse(null);
+                AttributeModifier speedMod = trident.tridentAttributes.get(Attributes.ATTACK_SPEED).stream().findFirst().orElse(null);
                 ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
-                builder.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.ATTACK_DAMAGE_MODIFIER, "Tool modifier", toolprop.ATTACK_DAMAGE != null ? toolprop.ATTACK_DAMAGE - 4 : damageAttr != null ? damageAttr.getAmount() : 0, AttributeModifier.Operation.ADDITION));
-                builder.put(Attributes.ATTACK_SPEED, new AttributeModifier(Item.ATTACK_SPEED_MODIFIER, "Tool modifier", toolprop.ATTACK_SPEED != null ? toolprop.ATTACK_SPEED - 4 : speedAttr != null ? speedAttr.getAmount() : 0, AttributeModifier.Operation.ADDITION));
+                builder.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.ATTACK_DAMAGE_MODIFIER, "Tool modifier", toolprop.ATTACK_DAMAGE != null ? toolprop.ATTACK_DAMAGE - 4 : damageMod != null ? damageMod.getAmount() : 0, AttributeModifier.Operation.ADDITION));
+                builder.put(Attributes.ATTACK_SPEED, new AttributeModifier(Item.ATTACK_SPEED_MODIFIER, "Tool modifier", toolprop.ATTACK_SPEED != null ? toolprop.ATTACK_SPEED - 4 : speedMod != null ? speedMod.getAmount() : 0, AttributeModifier.Operation.ADDITION));
                 trident.tridentAttributes = builder.build();
             }
         }
         for (Enchantment enchantment : ENCHANTMENTS.keySet()) {
             Properties.Enchantment prop = ENCHANTMENTS.get(enchantment);
             if (prop.RARITY != null) enchantment.rarity = prop.RARITY;
-            //TODO
 /*
             if (prop.MAX_LEVEL != null) MIXIN_MAX_LEVEL.put(enchantment, prop.MAX_LEVEL);
             if (prop.MIN_ENCHANTABILITY != null) MIXIN_MIN_ENCHANTABILITY.put(enchantment, prop.MIN_ENCHANTABILITY);
@@ -554,20 +551,20 @@ public final class Config {
         }
         for (Item item : ForgeRegistries.ITEMS)
             if (item.group != null && item.group.getPath().equals("none")) item.group = null;
-        for (ItemGroup g : ENCHANTMENT_GROUPS.keySet())
-            g.setRelevantEnchantmentTypes(ENCHANTMENT_GROUPS.get(g).toArray(new EnchantmentType[0]));
+        for (ItemGroup group : ENCHANTMENT_GROUPS.keySet())
+            group.setRelevantEnchantmentTypes(ENCHANTMENT_GROUPS.get(group).toArray(new EnchantmentType[0]));
         if (REMOVE_EMPTY_ITEM_GROUPS.get()) {
             ArrayList<ItemGroup> groups = Lists.newArrayList(ItemGroup.GROUPS);
             ArrayList<ItemGroup> result = Lists.newArrayList(ItemGroup.GROUPS);
-            for (ItemGroup t : groups) {
-                if (t.getRelevantEnchantmentTypes().length > 0) continue;
+            for (ItemGroup group : groups) {
+                if (group.getRelevantEnchantmentTypes().length > 0) continue;
                 boolean b = false;
                 for (Item item : ForgeRegistries.ITEMS)
-                    if (item.group == t) {
+                    if (item.group == group) {
                         b = true;
                         break;
                     }
-                if (!b) result.remove(t);
+                if (!b) result.remove(group);
             }
             result.add(4, ItemGroup.HOTBAR);
             result.add(5, ItemGroup.SEARCH);
@@ -576,183 +573,76 @@ public final class Config {
             ItemGroup.GROUPS = result.toArray(new ItemGroup[0]);
         }
         ItemGroup.BUILDING_BLOCKS.index = 0;
-        dump(DUMP_BLOCKS_AFTER, DUMP_BLOCKS_AFTER_NON_DEFAULT, DUMP_ITEMS_AFTER, DUMP_ITEMS_AFTER_NON_DEFAULT, DUMP_ENCHANTMENTS_AFTER, DUMP_GROUPS_AFTER);
+        dump(DUMP_BLOCKS_AFTER.get(), DUMP_BLOCKS_AFTER_NON_DEFAULT.get(), DUMP_ITEMS_AFTER.get(), DUMP_ITEMS_AFTER_NON_DEFAULT.get(), DUMP_ENCHANTMENTS_AFTER.get(), DUMP_GROUPS_AFTER.get());
     }
 
-    private static void dump(ForgeConfigSpec.BooleanValue blocks, ForgeConfigSpec.BooleanValue blocksNonDefault, ForgeConfigSpec.BooleanValue items, ForgeConfigSpec.BooleanValue itemsNonDefault, ForgeConfigSpec.BooleanValue enchantments, ForgeConfigSpec.BooleanValue groups) {
-        if (blocks.get() || blocksNonDefault.get()) {
+    private static void dump(boolean blocks, boolean blocksNonDefault, boolean items, boolean itemsNonDefault, boolean enchantments, boolean groups) {
+        if (blocks || blocksNonDefault) {
             Logger.forceInfo("Blocks:");
-            for (Block b : ForgeRegistries.BLOCKS) {
-                if (b.properties.isAir) continue;
-                float hardness = b.properties.hardness;
-                float resistance = b.blastResistance;
-                int harvestLevel = b.getHarvestLevel(b.getDefaultState());
-                String harvestTool = b.getHarvestTool(b.getDefaultState()) == null ? "" : b.getHarvestTool(b.getDefaultState()).getName();
-                boolean requiresTool = b.properties.requiresTool;
-                int lightLevel = b.properties.lightLevel.applyAsInt(b.getDefaultState());
-                float slipperiness = b.slipperiness;
-                float speedFactor = b.speedFactor;
-                float jumpFactor = b.jumpFactor;
-                String soundType = getSoundType(b.soundType);
-                StringBuilder sb = new StringBuilder(b.getRegistryName().toString()).append(" - ");
-                if (blocks.get()) {
-                    sb.append("hardness: ").append(hardness).append(", ");
-                    sb.append("resistance: ").append(resistance).append(", ");
-                    sb.append("harvest level: ").append(harvestLevel).append(", ");
-                    sb.append("harvest tool: ").append(harvestTool).append(", ");
-                    sb.append("requires tool: ").append(requiresTool).append(", ");
-                    sb.append("light level: ").append(lightLevel).append(", ");
-                    sb.append("slipperiness: ").append(slipperiness).append(", ");
-                    sb.append("speed factor: ").append(speedFactor).append(", ");
-                    sb.append("jump factor: ").append(jumpFactor).append(", ");
-                    sb.append("sound type: ").append(soundType).append(", ");
-                } else if (blocksNonDefault.get()) {
-                    if (hardness != 0) sb.append("hardness: ").append(hardness).append(", ");
-                    if (resistance != 0) sb.append("resistance: ").append(resistance).append(", ");
-                    if (harvestLevel != -1) sb.append("harvest level: ").append(harvestLevel).append(", ");
-                    if (!harvestTool.equals("")) sb.append("harvest tool: ").append(harvestTool).append(", ");
-                    if (requiresTool) sb.append("requires tool: ").append(requiresTool).append(", ");
-                    if (lightLevel != 0) sb.append("light level: ").append(lightLevel).append(", ");
-                    if (slipperiness != 0.6f) sb.append("slipperiness: ").append(slipperiness).append(", ");
-                    if (speedFactor != 1) sb.append("speed factor: ").append(speedFactor).append(", ");
-                    if (jumpFactor != 1) sb.append("jump factor: ").append(jumpFactor).append(", ");
-                    if (soundType != null && !soundType.equals("stone")) sb.append("sound type: ").append(soundType).append(", ");
-                }
-                Logger.forceInfo(sb.substring(0, sb.length() - (sb.toString().equals(b.getRegistryName().toString()) ? 0 : 2)));
+            for (Block block : ForgeRegistries.BLOCKS) {
+                if (block.properties.isAir) continue;
+                StringBuilder builder = new StringBuilder(block.getRegistryName().toString()).append(" - ");
+                DumpingUtil.appendHardness(builder, block, blocksNonDefault);
+                DumpingUtil.appendResistance(builder, block, blocksNonDefault);
+                DumpingUtil.appendHarvestLevel(builder, block, blocksNonDefault);
+                DumpingUtil.appendHarvestTool(builder, block, blocksNonDefault);
+                DumpingUtil.appendRequiresTool(builder, block, blocksNonDefault);
+                DumpingUtil.appendLightLevel(builder, block, blocksNonDefault);
+                DumpingUtil.appendSlipperiness(builder, block, blocksNonDefault);
+                DumpingUtil.appendSpeedFactor(builder, block, blocksNonDefault);
+                DumpingUtil.appendJumpFactor(builder, block, blocksNonDefault);
+                DumpingUtil.appendSoundType(builder, block, blocksNonDefault);
+                Logger.forceInfo(builder.substring(0, builder.length() - (builder.toString().equals(block.getRegistryName().toString() + " - ") ? 3 : 2)));
             }
         }
-        if (items.get() || itemsNonDefault.get()) {
+        if (items || itemsNonDefault) {
             Logger.forceInfo("Items:");
-            for (Item i : ForgeRegistries.ITEMS) {
-                int maxDamage = i.maxDamage;
-                int maxStackSize = i.maxStackSize;
-                String group = i.group == null ? "" : i.group.getPath();
-                boolean isImmuneToFire = i.isImmuneToFire;
-                String rarity = i.rarity.toString().toLowerCase();
-                int enchantability = i.getItemEnchantability();
-                StringBuilder toolTypes = new StringBuilder();
-                if (i.getToolTypes(null).size() > 0) for (ToolType t : i.getToolTypes(null)) toolTypes.append("tool type: ").append(t.getName()).append(" (harvest level: ").append(i.getHarvestLevel(null, t, null, null)).append("), ");
-                StringBuilder sb = new StringBuilder(i.getRegistryName().toString()).append(" - ");
-                if (items.get()) {
-                    sb.append("max damage: ").append(maxDamage).append(", ");
-                    sb.append("max stack size: ").append(maxStackSize).append(", ");
-                    sb.append("group: ").append(group).append(", ");
-                    sb.append("is immune to fire: ").append(isImmuneToFire).append(", ");
-                    sb.append("rarity: ").append(rarity).append(", ");
-                    sb.append("enchantability: ").append(enchantability).append(", ");
-                    sb.append(toolTypes).append(", ");
-                } else if (itemsNonDefault.get()) {
-                    if (maxDamage != 0) sb.append("max damage: ").append(maxDamage).append(", ");
-                    if (maxStackSize != 64) sb.append("max stack size: ").append(maxStackSize).append(", ");
-                    if (!group.equals("")) sb.append("group: ").append(group).append(", ");
-                    if (isImmuneToFire) sb.append("is immune to fire: ").append(isImmuneToFire).append(", ");
-                    if (!rarity.equals("common")) sb.append("rarity: ").append(rarity).append(", ");
-                    if (enchantability != DEFAULT_ENCHANTABILITY.get()) sb.append("enchantability: ").append(enchantability).append(", ");
-                    if (!toolTypes.toString().equals("")) sb.append(toolTypes).append(", ");
+            for (Item item : ForgeRegistries.ITEMS) {
+                StringBuilder builder = new StringBuilder(item.getRegistryName().toString()).append(" - ");
+                DumpingUtil.appendMaxDamage(builder, item, itemsNonDefault);
+                DumpingUtil.appendMaxStackSize(builder, item, itemsNonDefault);
+                DumpingUtil.appendItemGroup(builder, item, itemsNonDefault);
+                DumpingUtil.appendIsImmuneToFire(builder, item, itemsNonDefault);
+                DumpingUtil.appendRarity(builder, item, itemsNonDefault);
+                DumpingUtil.appendEnchantability(builder, item, itemsNonDefault);
+                DumpingUtil.appendToolType(builder, item, itemsNonDefault);
+                if (item instanceof ArmorItem) {
+                    ArmorItem armor = (ArmorItem) item;
+                    DumpingUtil.appendArmor(builder, armor, itemsNonDefault);
+                    DumpingUtil.appendToughness(builder, armor, itemsNonDefault);
+                    DumpingUtil.appendKnockbackResistance(builder, armor, itemsNonDefault);
+                } else if (item instanceof ToolItem) {
+                    ToolItem tool = (ToolItem) item;
+                    DumpingUtil.appendEfficiency(builder, tool, itemsNonDefault);
+                    DumpingUtil.appendDamage(builder, tool, itemsNonDefault);
+                    DumpingUtil.appendSpeed(builder, tool, itemsNonDefault);
+                } else if (item instanceof SwordItem) {
+                    SwordItem sword = (SwordItem) item;
+                    DumpingUtil.appendDamage(builder, sword, itemsNonDefault);
+                    DumpingUtil.appendSpeed(builder, sword, itemsNonDefault);
+                } else if (item instanceof TridentItem) {
+                    TridentItem trident = (TridentItem) item;
+                    DumpingUtil.appendDamage(builder, trident, itemsNonDefault);
+                    DumpingUtil.appendSpeed(builder, trident, itemsNonDefault);
                 }
-                sb.append(toolTypes);
-                if (i instanceof ArmorItem) {
-                    int armor = ((ArmorItem) i).damageReduceAmount;
-                    float toughness = ((ArmorItem) i).toughness;
-                    float knockbackResistance = ((ArmorItem) i).knockbackResistance;
-                    if (items.get()) {
-                        sb.append("armor: ").append(armor).append(", ");
-                        sb.append("toughness: ").append(toughness).append(", ");
-                        sb.append("knockback resistance: ").append(knockbackResistance).append(", ");
-                    } else if (itemsNonDefault.get()) {
-                        if (armor != 0) sb.append("armor: ").append(armor).append(", ");
-                        if (toughness != 0) sb.append("toughness: ").append(toughness).append(", ");
-                        if (knockbackResistance != 0) sb.append("knockback resistance: ").append(knockbackResistance).append(", ");
-                    }
-                }
-                if (i instanceof ToolItem || i instanceof SwordItem || i instanceof TridentItem) {
-                    if (i instanceof ToolItem) sb.append("efficiency: ").append(((ToolItem) i).efficiency).append(", ");
-                    float damage = 0, speed = 0;
-                    if (i instanceof ToolItem) {
-                        damage = ((ToolItem) i).attackDamage;
-                        AttributeModifier speedAttr = ((ToolItem) i).toolAttributes.get(Attributes.ATTACK_SPEED).stream().findFirst().orElse(null);
-                        speed = speedAttr != null ? (float) speedAttr.getAmount() : 0;
-                    } else if (i instanceof SwordItem) {
-                        damage = ((SwordItem) i).attackDamage;
-                        AttributeModifier speedAttr = ((SwordItem) i).attributeModifiers.get(Attributes.ATTACK_SPEED).stream().findFirst().orElse(null);
-                        speed = speedAttr != null ? (float) speedAttr.getAmount() : 0;
-                    } else if (i instanceof TridentItem) {
-                        AttributeModifier damageAttr = ((TridentItem) i).tridentAttributes.get(Attributes.ATTACK_DAMAGE).stream().findFirst().orElse(null);
-                        AttributeModifier speedAttr = ((TridentItem) i).tridentAttributes.get(Attributes.ATTACK_SPEED).stream().findFirst().orElse(null);
-                        damage = damageAttr != null ? (float) damageAttr.getAmount() : 0;
-                        speed = speedAttr != null ? (float) speedAttr.getAmount() : 0;
-                    }
-                    sb.append("attack damage: ").append(damage + 1f).append(", ");
-                    sb.append("attack speed: ").append(speed + 4f).append(", ");
-                }
-                if (!sb.toString().equals(i.getRegistryName().toString() + " - ")) Logger.forceInfo(sb.substring(0, sb.length() - 2));
+                Logger.forceInfo(builder.substring(0, builder.length() - (builder.toString().equals(item.getRegistryName().toString() + " - ") ? 3 : 2)));
             }
         }
-        if (enchantments.get()) {
+        if (enchantments) {
             Logger.forceInfo("Enchantments:");
-            for (Enchantment e : ForgeRegistries.ENCHANTMENTS) Logger.forceInfo(e.getRegistryName().toString() + " - rarity: " + e.getRarity().toString().toLowerCase());
+            for (Enchantment e : ForgeRegistries.ENCHANTMENTS)
+                Logger.forceInfo(e.getRegistryName().toString() + " - rarity: " + e.getRarity().toString().toLowerCase());
         }
-        if (groups.get()) {
+        if (groups) {
             Logger.forceInfo("Item groups:");
-            for (ItemGroup g : ItemGroup.GROUPS) {
-                EnchantmentType[] l = g.getRelevantEnchantmentTypes();
-                StringBuilder sb = new StringBuilder(g.getPath());
-                if (l.length > 0) sb.append(" - enchantments: ");
-                for (EnchantmentType t : l) sb.append(t.name().toLowerCase()).append(", ");
-                Logger.forceInfo(l.length > 0 ? sb.substring(0, sb.length() - 2) : sb.toString());
+            for (ItemGroup group : ItemGroup.GROUPS) {
+                EnchantmentType[] types = group.getRelevantEnchantmentTypes();
+                StringBuilder builder = new StringBuilder(group.getPath());
+                if (types.length > 0) builder.append(" - enchantment types: ");
+                for (EnchantmentType type : types) builder.append(type.name().toLowerCase()).append(", ");
+                Logger.forceInfo(types.length > 0 ? builder.substring(0, builder.length() - 2) : builder.toString());
             }
         }
-    }
-
-    private static String getSoundType(SoundType t) {
-        if (t == SoundType.WOOD) return "wood";
-        if (t == SoundType.GROUND) return "ground";
-        if (t == SoundType.PLANT) return "plant";
-        if (t == SoundType.LILY_PADS) return "lily_pads";
-        if (t == SoundType.STONE) return "stone";
-        if (t == SoundType.METAL) return "metal";
-        if (t == SoundType.GLASS) return "glass";
-        if (t == SoundType.CLOTH) return "cloth";
-        if (t == SoundType.SAND) return "sand";
-        if (t == SoundType.SNOW) return "snow";
-        if (t == SoundType.LADDER) return "ladder";
-        if (t == SoundType.ANVIL) return "anvil";
-        if (t == SoundType.SLIME) return "slime";
-        if (t == SoundType.HONEY) return "honey";
-        if (t == SoundType.WET_GRASS) return "wet_grass";
-        if (t == SoundType.CORAL) return "coral";
-        if (t == SoundType.BAMBOO) return "bamboo";
-        if (t == SoundType.BAMBOO_SAPLING) return "bamboo_sapling";
-        if (t == SoundType.SCAFFOLDING) return "scaffolding";
-        if (t == SoundType.SWEET_BERRY_BUSH) return "sweet_berry_bush";
-        if (t == SoundType.CROP) return "crop";
-        if (t == SoundType.STEM) return "stem";
-        if (t == SoundType.VINE) return "vine";
-        if (t == SoundType.NETHER_WART) return "nether_wart";
-        if (t == SoundType.LANTERN) return "lantern";
-        if (t == SoundType.HYPHAE) return "hyphae";
-        if (t == SoundType.NYLIUM) return "nylium";
-        if (t == SoundType.FUNGUS) return "fungus";
-        if (t == SoundType.ROOT) return "root";
-        if (t == SoundType.SHROOMLIGHT) return "shroomlight";
-        if (t == SoundType.NETHER_VINE) return "nether_vine";
-        if (t == SoundType.NETHER_VINE_LOWER_PITCH) return "nether_vine_lower_pitch";
-        if (t == SoundType.SOUL_SAND) return "soul_sand";
-        if (t == SoundType.SOUL_SOIL) return "soul_soil";
-        if (t == SoundType.BASALT) return "basalt";
-        if (t == SoundType.WART) return "wart";
-        if (t == SoundType.NETHERRACK) return "netherrack";
-        if (t == SoundType.NETHER_BRICK) return "nether_brick";
-        if (t == SoundType.NETHER_SPROUT) return "nether_sprout";
-        if (t == SoundType.NETHER_ORE) return "nether_ore";
-        if (t == SoundType.BONE) return "bone";
-        if (t == SoundType.NETHERITE) return "netherite";
-        if (t == SoundType.ANCIENT_DEBRIS) return "ancient_debris";
-        if (t == SoundType.LODESTONE) return "lodestone";
-        if (t == SoundType.CHAIN) return "chain";
-        if (t == SoundType.NETHER_GOLD) return "nether_gold";
-        if (t == SoundType.GILDED_BLACKSTONE) return "gilded_blackstone";
-        return null;
     }
 
     private static Properties.Item itemProperties(Item item) {

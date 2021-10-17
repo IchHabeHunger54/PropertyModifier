@@ -20,7 +20,6 @@ import net.minecraft.item.MerchantOffer;
 import net.minecraft.item.SuspiciousStewItem;
 import net.minecraft.potion.Effect;
 import net.minecraft.potion.Potion;
-import net.minecraft.potion.PotionBrewing;
 import net.minecraft.potion.PotionUtils;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
@@ -32,7 +31,6 @@ import net.minecraft.world.storage.MapDecoration;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.antlr.v4.runtime.misc.Pair;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +38,7 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nonnull;
 
 public class Trade implements VillagerTrades.ITrade {
     protected final int maxUses;
@@ -230,22 +229,21 @@ public class Trade implements VillagerTrades.ITrade {
     }
 
     public static final class PotionItemTrade extends Trade {
-        private final Potion potion;
+        private final List<Potion> potion;
 
-        public PotionItemTrade(int uses, int xp, float price, Item buy, int buyCount, Item sell, Potion potionIn) {
+        public PotionItemTrade(int uses, int xp, float price, Item buy, int buyCount, Item sell, List<Potion> potionIn) {
             super(uses, xp, price, buy, buyCount, sell, 1);
             potion = potionIn;
         }
 
-        public PotionItemTrade(int uses, int xp, float price, Item buy, int buyCount, Item buySecond, int buySecondCount, Item sell, Potion potionIn) {
+        public PotionItemTrade(int uses, int xp, float price, Item buy, int buyCount, Item buySecond, int buySecondCount, Item sell, List<Potion> potionIn) {
             super(uses, xp, price, buy, buyCount, buySecond, buySecondCount, sell, 1);
             potion = potionIn;
         }
 
         @Override
         protected ItemStack getSellItem() {
-            List<Potion> l = StreamSupport.stream(ForgeRegistries.POTION_TYPES.spliterator(), false).filter(p -> !p.getEffects().isEmpty() && PotionBrewing.isBrewablePotion(p)).collect(Collectors.toList());
-            return PotionUtils.addPotionToItemStack(new ItemStack(sell, sellCount), potion == null ? l.get(rand.nextInt(l.size())) : potion);
+            return PotionUtils.addPotionToItemStack(new ItemStack(sell, sellCount), potion.get(rand.nextInt(potion.size())));
         }
     }
 

@@ -3,7 +3,6 @@ package ihh.propertymodifier;
 import net.minecraft.entity.MobEntity;
 import net.minecraft.entity.ai.attributes.Attribute;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
-import net.minecraft.entity.ai.attributes.AttributeModifierMap;
 import net.minecraft.entity.ai.attributes.Attributes;
 import net.minecraft.entity.ai.attributes.ModifiableAttributeInstance;
 import net.minecraft.item.AxeItem;
@@ -28,7 +27,7 @@ public final class EventHandler {
         ServerConfig.work();
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void blockToolInteract(BlockEvent.BlockToolInteractEvent e) {
         if (e.getToolType() == ToolType.AXE) {
             if (ServerConfig.AXE_CLEAR.get()) e.setCanceled(true);
@@ -56,17 +55,17 @@ public final class EventHandler {
     @SubscribeEvent
     public static void entityJoinWorld(EntityJoinWorldEvent e) {
         if (e.getEntity() instanceof MobEntity && !e.getEntity().getPersistentData().getBoolean("alreadyAppliedAttributes")) {
-            MobEntity l = (MobEntity) e.getEntity();
-            if (ServerConfig.MODIFIERS.containsKey(l.getType()))
-                for (Map.Entry<Attribute, List<AttributeModifier>> m : ServerConfig.MODIFIERS.get(l.getType()).entrySet()) {
-                    for (AttributeModifier a : m.getValue()) {
-                        ModifiableAttributeInstance t = l.getAttribute(m.getKey());
-                        if (t == null) t = new ModifiableAttributeInstance(m.getKey(), x -> {});
-                        t.applyPersistentModifier(a);
+            MobEntity mob = (MobEntity) e.getEntity();
+            if (ServerConfig.MODIFIERS.containsKey(mob.getType()))
+                for (Map.Entry<Attribute, List<AttributeModifier>> entry : ServerConfig.MODIFIERS.get(mob.getType()).entrySet()) {
+                    for (AttributeModifier modifier : entry.getValue()) {
+                        ModifiableAttributeInstance attribute = mob.getAttribute(entry.getKey());
+                        if (attribute == null) attribute = new ModifiableAttributeInstance(entry.getKey(), x -> {});
+                        attribute.applyPersistentModifier(modifier);
                     }
-                    if (m.getKey() == Attributes.MAX_HEALTH) l.setHealth(l.getMaxHealth());
+                    if (entry.getKey() == Attributes.MAX_HEALTH) mob.setHealth(mob.getMaxHealth());
                 }
-            l.getPersistentData().putBoolean("alreadyAppliedAttributes", true);
+            mob.getPersistentData().putBoolean("alreadyAppliedAttributes", true);
         }
     }
 
