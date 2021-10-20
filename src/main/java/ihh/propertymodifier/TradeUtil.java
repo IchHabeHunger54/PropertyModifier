@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TradeUtil {
+public final class TradeUtil {
     public static void addTrade(List<VillagerTrades.ITrade> list, int uses, int xp, float price, List<String> config) {
         Item buy = ForgeRegistries.ITEMS.getValue(new ResourceLocation(config.get(0)));
         int buyCount = Integer.parseInt(config.get(1));

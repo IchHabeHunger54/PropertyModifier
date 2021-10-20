@@ -13,7 +13,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @SuppressWarnings({"unused", "ConstantConditions"})
-public class ConfigUtil {
+public final class ConfigUtil {
     public static <T extends IForgeRegistryEntry<T>, U> LinkedHashMap<T, U> getMap(ForgeConfigSpec.ConfigValue<List<String>> list, Collection<? extends T> registry, Function4<String, String, String, Predicate<U>, U> parserU, Predicate<U> predicateU) {
         LinkedHashMap<T, U> map = new LinkedHashMap<>();
         for (String s : list.get()) {
