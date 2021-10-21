@@ -14,6 +14,7 @@ import net.minecraft.item.ArmorItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.item.Rarity;
 import net.minecraft.item.SwordItem;
 import net.minecraft.item.TieredItem;
@@ -27,11 +28,13 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 @SuppressWarnings({"ConstantConditions", "FieldMayBeFinal", "CommentedOutCode", "DuplicatedCode"})
@@ -199,6 +202,7 @@ public final class Config {
         List<Item> TOOL_REGISTRY = new ArrayList<>(ForgeRegistries.ITEMS.getValues());
         List<Enchantment> ENCHANTMENT_REGISTRY = new ArrayList<>(ForgeRegistries.ENCHANTMENTS.getValues());
         BLOCK_REGISTRY.removeIf(e -> e.properties.isAir);
+        ITEM_REGISTRY.remove(Items.AIR);
         ARMOR_REGISTRY.removeIf(e -> !(e instanceof ArmorItem));
         TIERED_REGISTRY.removeIf(e -> !(e instanceof TieredItem) && !(e instanceof TridentItem));
         TOOL_REGISTRY.removeIf(e -> !(e instanceof ToolItem));
@@ -390,11 +394,12 @@ public final class Config {
         for (String s : ENCHANTMENT_ITEM_GROUP.get()) {
             String[] array = s.split(";");
             try {
-                EnchantmentType type = EnchantmentType.valueOf(array[0].toUpperCase());
+                List<EnchantmentType> type = Arrays.stream(EnchantmentType.values()).filter(e -> e.name().matches(array[0].toUpperCase())).collect(Collectors.toList());
                 ItemGroup group = ParsingUtil.parseItemGroup(array[1], s, ConfigUtil.getPath(ENCHANTMENT_ITEM_GROUP.getPath()), e -> true);
                 if (group != null) {
                     List<EnchantmentType> list = ENCHANTMENT_GROUPS.getOrDefault(group, new ArrayList<>());
-                    list.add(type);
+                    list.addAll(type);
+                    list = list.stream().distinct().collect(Collectors.toList());
                     ENCHANTMENT_GROUPS.put(group, list);
                 } else ConfigUtil.logInvalid(array[1], s, ConfigUtil.getPath(ENCHANTMENT_ITEM_GROUP.getPath()));
             } catch (IllegalArgumentException e) {
@@ -598,6 +603,7 @@ public final class Config {
         if (items || itemsNonDefault) {
             Logger.forceInfo("Items:");
             for (Item item : ForgeRegistries.ITEMS) {
+                if (item == Items.AIR) continue;
                 StringBuilder builder = new StringBuilder(item.getRegistryName().toString()).append(" - ");
                 DumpingUtil.appendMaxDamage(builder, item, itemsNonDefault);
                 DumpingUtil.appendMaxStackSize(builder, item, itemsNonDefault);
@@ -631,7 +637,7 @@ public final class Config {
         if (enchantments) {
             Logger.forceInfo("Enchantments:");
             for (Enchantment e : ForgeRegistries.ENCHANTMENTS)
-                Logger.forceInfo(e.getRegistryName().toString() + " - rarity: " + e.getRarity().toString().toLowerCase());
+                Logger.forceInfo(e.getRegistryName().toString() + " - rarity: " + e.getRarity().toString().toLowerCase() + ", type: " + e.type.toString().toLowerCase());
         }
         if (groups) {
             Logger.forceInfo("Item groups:");
