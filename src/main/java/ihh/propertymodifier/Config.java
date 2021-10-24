@@ -2,25 +2,34 @@ package ihh.propertymodifier;
 
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Lists;
+import it.unimi.dsi.fastutil.objects.Object2FloatMap;
+import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.ComposterBlock;
 import net.minecraft.block.SoundType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentType;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ai.attributes.Attribute;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.ai.attributes.Attributes;
 import net.minecraft.item.ArmorItem;
+import net.minecraft.item.AxeItem;
+import net.minecraft.item.HoeItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.Rarity;
+import net.minecraft.item.ShovelItem;
 import net.minecraft.item.SwordItem;
 import net.minecraft.item.TieredItem;
 import net.minecraft.item.ToolItem;
 import net.minecraft.item.TridentItem;
 import net.minecraft.item.crafting.Ingredient;
+import net.minecraft.util.IItemProvider;
 import net.minecraft.util.LazyValue;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ToolType;
@@ -76,6 +85,14 @@ public final class Config {
     private static ForgeConfigSpec.BooleanValue DUMP_ENCHANTMENTS_AFTER;
     private static ForgeConfigSpec.BooleanValue DUMP_GROUPS;
     private static ForgeConfigSpec.BooleanValue DUMP_GROUPS_AFTER;
+    private static ForgeConfigSpec.BooleanValue DUMP_COMPOSTER;
+    private static ForgeConfigSpec.BooleanValue DUMP_COMPOSTER_AFTER;
+    private static ForgeConfigSpec.BooleanValue DUMP_STRIPPING;
+    private static ForgeConfigSpec.BooleanValue DUMP_STRIPPING_AFTER;
+    private static ForgeConfigSpec.BooleanValue DUMP_PATHING;
+    private static ForgeConfigSpec.BooleanValue DUMP_PATHING_AFTER;
+    private static ForgeConfigSpec.BooleanValue DUMP_TILLING;
+    private static ForgeConfigSpec.BooleanValue DUMP_TILLING_AFTER;
     static ForgeConfigSpec.IntValue DEFAULT_ENCHANTABILITY;
     private static ForgeConfigSpec.ConfigValue<List<String>> ITEM_GROUP;
     private static ForgeConfigSpec.ConfigValue<List<String>> HARDNESS;
@@ -116,6 +133,27 @@ public final class Config {
     */
     private static ForgeConfigSpec.ConfigValue<List<String>> ENCHANTMENT_ITEM_GROUP;
     private static ForgeConfigSpec.BooleanValue REMOVE_ENCHANTMENT_ITEM_GROUPS;
+    private static ForgeConfigSpec.ConfigValue<List<String>> COMPOSTER_INPUTS;
+    private static ForgeConfigSpec.BooleanValue COMPOSTER_CLEAR;
+    private static ForgeConfigSpec.ConfigValue<List<String>> AXE_BLOCKS;
+    static ForgeConfigSpec.BooleanValue AXE_CLEAR;
+    private static ForgeConfigSpec.ConfigValue<List<String>> SHOVEL_BLOCKS;
+    static ForgeConfigSpec.BooleanValue SHOVEL_CLEAR;
+    private static ForgeConfigSpec.ConfigValue<List<String>> HOE_BLOCKS;
+    static ForgeConfigSpec.BooleanValue HOE_CLEAR;
+    private static ForgeConfigSpec.ConfigValue<List<String>> ENTITY_MODIFIERS;
+    public static Map<EntityType<?>, Map<Attribute, List<AttributeModifier>>> MODIFIERS = new HashMap<>();
+    static ForgeConfigSpec.ConfigValue<List<String>> VILLAGER_1_TRADES;
+    static ForgeConfigSpec.ConfigValue<List<String>> VILLAGER_2_TRADES;
+    static ForgeConfigSpec.ConfigValue<List<String>> VILLAGER_3_TRADES;
+    static ForgeConfigSpec.ConfigValue<List<String>> VILLAGER_4_TRADES;
+    static ForgeConfigSpec.ConfigValue<List<String>> VILLAGER_5_TRADES;
+    static ForgeConfigSpec.ConfigValue<List<String>> TRADER_NORMAL_TRADES;
+    static ForgeConfigSpec.ConfigValue<List<String>> TRADER_LAST_TRADES;
+    private static Object2FloatMap<IItemProvider> COMPOSTER_TRANSITIONS;
+    private static Map<Block, Block> AXE_TRANSITIONS;
+    private static Map<Block, BlockState> SHOVEL_TRANSITIONS;
+    private static Map<Block, BlockState> HOE_TRANSITIONS;
     private static boolean searchReload = false;
 
     static {
@@ -141,6 +179,14 @@ public final class Config {
         DUMP_ENCHANTMENTS_AFTER = builder.comment("Dump enchantments AFTER applying the changes.").define("dump_enchantments_after", false);
         DUMP_GROUPS = builder.comment("Dump item groups BEFORE applying the changes.").define("dump_groups", false);
         DUMP_GROUPS_AFTER = builder.comment("Dump item groups AFTER applying the changes.").define("dump_groups_after", false);
+        DUMP_COMPOSTER = builder.comment("Dump composter inputs BEFORE applying the changes.").define("dump_composter", false);
+        DUMP_COMPOSTER_AFTER = builder.comment("Dump composter inputs AFTER applying the changes.").define("dump_composter_after", false);
+        DUMP_STRIPPING = builder.comment("Dump stripping transitions BEFORE applying the changes.").define("dump_stripping", false);
+        DUMP_STRIPPING_AFTER = builder.comment("Dump stripping transitions AFTER applying the changes.").define("dump_stripping_after", false);
+        DUMP_PATHING = builder.comment("Dump pathing transitions BEFORE applying the changes.").define("dump_pathing", false);
+        DUMP_PATHING_AFTER = builder.comment("Dump pathing transitions AFTER applying the changes.").define("dump_pathing_after", false);
+        DUMP_TILLING = builder.comment("Dump tilling transitions BEFORE applying the changes.").define("dump_tilling", false);
+        DUMP_TILLING_AFTER = builder.comment("Dump tilling transitions AFTER applying the changes.").define("dump_tilling_after", false);
         DEFAULT_ENCHANTABILITY = builder.comment("The default enchantability of items. Change this if you have a mod installed that makes every item enchantable (and thus have a different enchantability). If you're unsure, leave this unchanged and run the item dumping. You will see if you need to change it or not.").defineInRange("default_enchantability", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
         builder.pop();
         builder.comment("Settings related to blocks. Format is \"blockid;value\", unless stated otherwise.").push("blocks");
@@ -191,6 +237,38 @@ public final class Config {
         ENCHANTMENT_ITEM_GROUP = builder.comment("The item group this enchantment type's enchanted books are in. As soon as you add one for an item group, you need to re-add every enchantment type for that group as well.").define("group", new ArrayList<>());
         REMOVE_ENCHANTMENT_ITEM_GROUPS = builder.comment("Remove enchantment books from creative tabs. Runs before group, so re-adding is possible.").define("remove_item_groups", false);
         builder.pop();
+        builder.push("composter");
+        COMPOSTER_INPUTS = builder.comment("Define additional composter inputs. Format is \"itemid;chance\", with item id being in the modid:itemid format and chance being a percentage between 0.0 and 1.0.").define("inputs", new ArrayList<>());
+        COMPOSTER_CLEAR = builder.comment("Whether to clear the default composter inputs and have the composter inputs only contain the stuff defined here.").define("clear", false);
+        builder.pop();
+        builder.push("stripping");
+        AXE_BLOCKS = builder.comment("Define additional stripping transitions. Format is \"fromid;toid\", with both of them being in the modid:blockid format.").define("transitions", new ArrayList<>());
+        AXE_CLEAR = builder.comment("Whether to clear the default stripping transitions and have the stripping transitions only contain the stuff defined here.").define("clear", false);
+        builder.pop();
+        builder.push("pathing");
+        SHOVEL_BLOCKS = builder.comment("Define additional pathing transitions. Format is \"fromid;toid\", with both of them being in the modid:blockid format.").define("transitions", new ArrayList<>());
+        SHOVEL_CLEAR = builder.comment("Whether to clear the default pathing transitions and have the pathing transitions only contain the stuff defined here.").define("clear", false);
+        builder.pop();
+        builder.push("tilling");
+        HOE_BLOCKS = builder.comment("Define additional tilling transitions. Format is \"fromid;toid\", with both of them being in the modid:blockid format.").define("transitions", new ArrayList<>());
+        HOE_CLEAR = builder.comment("Whether to clear the default tilling transitions and have the tilling transitions only contain the stuff defined here.").define("clear", false);
+        builder.pop();
+        builder.push("entities");
+        ENTITY_MODIFIERS = builder.comment("Apply entity attribute modifiers on spawning. To get the default value of an attribute, make a superflat world without mob spawning, spawn the desired mob, and run \"/attribute @e[type=<entityid>,limit=1] <attributeid> get\". Format is \"entity;attribute;amount;operation\":", "entity: the entity id (e.g. minecraft:rabbit)", "attribute: the attribute id (e.g. minecraft:generic.max_health)", "amount: the amount of the modifier (e.g. 5)", "operation: 0 for addition, 1 for multiply base, 2 for multiply total. See https://minecraft.fandom.com/wiki/Attribute to see what they each do").define("modifiers", new ArrayList<>());
+        builder.pop();
+        builder.push("villager_trading");
+        builder.comment("Adds new villager trades. villager_x_trades defines the villager level (1-5). Due to technical reasons, if you add trades for a specific profession for a specific level, you need to re-add all trades for that profession level. E. g. if you wanted to add an enchanted book trade to a level 5 librarian, you need to re-add all other trades for a level 5 librarian as well. See https://minecraft.fandom.com/wiki/Trading for the vanilla defaults", "Format is profession;uses;xp;pricemultiplier;tradetype;tradetype-specific-args", "profession: villager profession (e. g. minecraft:librarian)", "uses: how often the trade can be traded before it is locked", "xp: the amount of villager xp given to the villager", "price multiplier: every time you trade with a villager, the selling price is multiplied with 1 - this value (e. g. 0.1 means that every time you use the trade, the price is lowered by 10%)", "tradetype and corresponding tradetype-specific args can take the following values (values in [] are optional):", "  normal: buyItem1;buyItemCount1;[buyItem2;buyItemCount2;]sellItem;sellItemCount - a normal trade that takes 1 or 2 stacks in and gives 1 stack out. The items are item ids (e. g. minecraft:emerald), the item counts are numbers between 1 and 64", "  dyed: buyItem1;buyItemCount1;[buyItem2;buyItemCount2;]sellItem\" - the sell item (e. g. leather armor) will be randomly dyed", "  map: buyItem1;buyItemCount1;[buyItem2;buyItemCount2;]structure;mapdecoration\" - structure is a structure id (e. g. minecraft:stronghold), mapdecoration can be one of the following: \"player\", \"frame\", \"red_marker\", \"blue_marker\", \"target_x\", \"target_point\", \"player_off_map\", \"player_off_limits\", \"mansion\", \"monument\", \"red_x\", \"banner_black\", \"banner_blue\", \"banner_brown\", \"banner_cyan\", \"banner_gray\", \"banner_green\", \"banner_light_blue\", \"banner_light_gray\", \"banner_lime\", \"banner_magenta\", \"banner_orange\", \"banner_pink\", \"banner_purple\", \"banner_red\", \"banner_white\", \"banner_yellow\"", "  enchantedbook: buyItem1;[buyItem2;buyItemCount2;]enchantment;level - enchantment to use (e. g. minecraft:sharpness, or \"any\" for random enchantments), level for the level. Outputs an enchanted book, at which the amount of buyItem1 is scaled - a lvl 5 book costs approx. 5 times more than a lvl 1 book. It's currently impossible to add more than one enchantment", "  enchanteditem: buyItem1;[buyItem2;buyItemCount2;]sellItem;enchantment;level - enchantment to use (e. g. minecraft:sharpness, or \"any\" for random enchantments), level for the level. Outputs an enchanted book, at which the amount of buyItem1 is scaled - a lvl 5 helmet costs approx. 5 times more than a lvl 1 helmet. It's currently impossible to add more than one enchantment", "  potion: buyItem1;buyItemCount1;[buyItem2;buyItemCount2;]sellItem;potion - the potion (using \"any\" will randomly select one) is applied to the sell item, so unless you have additional potion-like items added by other mods, this should only be minecraft:potion, minecraft:splash_potion, minecraft:lingering_potion or minecraft:tipped_arrow", "  stew: buyItem1;buyItemCount1;[buyItem2;buyItemCount2;]effect;duration - effect is an effect id (e. g. minecraft:strength), duration is an integer determining the amount of ticks the effect lasts");
+        VILLAGER_1_TRADES = builder.define("villager_1_trades", new ArrayList<>());
+        VILLAGER_2_TRADES = builder.define("villager_2_trades", new ArrayList<>());
+        VILLAGER_3_TRADES = builder.define("villager_3_trades", new ArrayList<>());
+        VILLAGER_4_TRADES = builder.define("villager_4_trades", new ArrayList<>());
+        VILLAGER_5_TRADES = builder.define("villager_5_trades", new ArrayList<>());
+        builder.pop();
+        builder.push("wandering_trader_trading");
+        builder.comment("Adds new wandering trader trades. Due to how the wandering trader works, there are two lists: normal and last trades. When the trader spawns, five normal trades and one last trade are each randomly chosen from their corresponding lists. Note that as soon as you add anything in any of the lists, it removes all other trades (including the ones from the other list), and only this mod's added trades remain, so you need to re-add most things if you only want to add one trade. See https://minecraft.fandom.com/wiki/Trading for the vanilla defaults", "Format is uses;pricemultiplier;tradetype;tradetype-specific-args", "uses: how often the trade can be traded before it is locked", "price multiplier: every time you trade with a villager, the selling price is multiplied with 1 - this value (e. g. 0.1 means that every time you use the trade, the price is lowered by 10%)", "tradetype and corresponding tradetype-specific args can take the following values (values in [] are optional):", "  normal: buyItem1;buyItemCount1;[buyItem2;buyItemCount2;]sellItem;sellItemCount - a normal trade that takes 1 or 2 stacks in and gives 1 stack out. The items are item ids (e. g. minecraft:emerald), the item counts are numbers between 1 and 64", "  dyed: buyItem1;buyItemCount1;[buyItem2;buyItemCount2;]sellItem\" - the sell item (e. g. leather armor) will be randomly dyed", "  map: buyItem1;buyItemCount1;[buyItem2;buyItemCount2;]structure;mapdecoration\" - structure is a structure id (e. g. minecraft:stronghold), mapdecoration can be one of the following: \"player\", \"frame\", \"red_marker\", \"blue_marker\", \"target_x\", \"target_point\", \"player_off_map\", \"player_off_limits\", \"mansion\", \"monument\", \"red_x\", \"banner_black\", \"banner_blue\", \"banner_brown\", \"banner_cyan\", \"banner_gray\", \"banner_green\", \"banner_light_blue\", \"banner_light_gray\", \"banner_lime\", \"banner_magenta\", \"banner_orange\", \"banner_pink\", \"banner_purple\", \"banner_red\", \"banner_white\", \"banner_yellow\"", "  enchantedbook: buyItem1;[buyItem2;buyItemCount2;]enchantment;level - enchantment to use (e. g. minecraft:sharpness, or \"any\" for random enchantments), level for the level. Outputs an enchanted book, at which the amount of buyItem1 is scaled - a lvl 5 book costs approx. 5 times more than a lvl 1 book. It's currently impossible to add more than one enchantment", "  enchanteditem: buyItem1;[buyItem2;buyItemCount2;]sellItem;enchantment;level - enchantment to use (e. g. minecraft:sharpness, or \"any\" for random enchantments), level for the level. Outputs an enchanted book, at which the amount of buyItem1 is scaled - a lvl 5 helmet costs approx. 5 times more than a lvl 1 helmet. It's currently impossible to add more than one enchantment", "  potion: buyItem1;buyItemCount1;[buyItem2;buyItemCount2;]sellItem;potion - the potion (using \"any\" will randomly select one) is applied to the sell item, so unless you have additional potion-like items added by other mods, this should only be minecraft:potion, minecraft:splash_potion, minecraft:lingering_potion or minecraft:tipped_arrow", "  stew: buyItem1;buyItemCount1;[buyItem2;buyItemCount2;]effect;duration - effect is an effect id (e. g. minecraft:strength), duration is an integer determining the amount of ticks the effect lasts");
+        TRADER_NORMAL_TRADES = builder.define("trader_normal_trades", new ArrayList<>());
+        TRADER_LAST_TRADES = builder.define("trader_last_trades", new ArrayList<>());
+        builder.pop();
         SPEC = builder.build();
     }
 
@@ -206,7 +284,7 @@ public final class Config {
         ARMOR_REGISTRY.removeIf(e -> !(e instanceof ArmorItem));
         TIERED_REGISTRY.removeIf(e -> !(e instanceof TieredItem) && !(e instanceof TridentItem));
         TOOL_REGISTRY.removeIf(e -> !(e instanceof ToolItem));
-        dump(DUMP_BLOCKS.get(), DUMP_BLOCKS_NON_DEFAULT.get(), DUMP_ITEMS.get(), DUMP_ITEMS_NON_DEFAULT.get(), DUMP_ENCHANTMENTS.get(), DUMP_GROUPS.get());
+        dump(DUMP_BLOCKS.get(), DUMP_BLOCKS_NON_DEFAULT.get(), DUMP_ITEMS.get(), DUMP_ITEMS_NON_DEFAULT.get(), DUMP_ENCHANTMENTS.get(), DUMP_GROUPS.get(), DUMP_COMPOSTER.get(), DUMP_STRIPPING.get(), DUMP_PATHING.get(), DUMP_TILLING.get());
         if (REMOVE_ENCHANTMENT_ITEM_GROUPS.get())
             for (ItemGroup group : ItemGroup.GROUPS)
                 group.setRelevantEnchantmentTypes();
@@ -578,10 +656,47 @@ public final class Config {
             ItemGroup.GROUPS = result.toArray(new ItemGroup[0]);
         }
         ItemGroup.BUILDING_BLOCKS.index = 0;
-        dump(DUMP_BLOCKS_AFTER.get(), DUMP_BLOCKS_AFTER_NON_DEFAULT.get(), DUMP_ITEMS_AFTER.get(), DUMP_ITEMS_AFTER_NON_DEFAULT.get(), DUMP_ENCHANTMENTS_AFTER.get(), DUMP_GROUPS_AFTER.get());
+        if (COMPOSTER_TRANSITIONS == null)
+            COMPOSTER_TRANSITIONS = new Object2FloatOpenHashMap<>(ComposterBlock.CHANCES);
+        if (AXE_TRANSITIONS == null) AXE_TRANSITIONS = new HashMap<>(AxeItem.BLOCK_STRIPPING_MAP);
+        if (SHOVEL_TRANSITIONS == null) SHOVEL_TRANSITIONS = new HashMap<>(ShovelItem.SHOVEL_LOOKUP);
+        if (HOE_TRANSITIONS == null) HOE_TRANSITIONS = new HashMap<>(HoeItem.HOE_LOOKUP);
+        ComposterBlock.CHANCES.clear();
+        ComposterBlock.CHANCES.putAll(COMPOSTER_TRANSITIONS);
+        AxeItem.BLOCK_STRIPPING_MAP = new HashMap<>();
+        AxeItem.BLOCK_STRIPPING_MAP.putAll(AXE_TRANSITIONS);
+        ShovelItem.SHOVEL_LOOKUP.clear();
+        ShovelItem.SHOVEL_LOOKUP.putAll(SHOVEL_TRANSITIONS);
+        HoeItem.HOE_LOOKUP.clear();
+        HoeItem.HOE_LOOKUP.putAll(HOE_TRANSITIONS);
+        if (COMPOSTER_CLEAR.get()) ComposterBlock.CHANCES.clear();
+        if (AXE_CLEAR.get()) AxeItem.BLOCK_STRIPPING_MAP = new HashMap<>();
+        if (SHOVEL_CLEAR.get()) ShovelItem.SHOVEL_LOOKUP.clear();
+        if (HOE_CLEAR.get()) HoeItem.HOE_LOOKUP.clear();
+        List<Block> BLOCK_REGISTRY = new ArrayList<>(ForgeRegistries.BLOCKS.getValues());
+        BLOCK_REGISTRY.removeIf(e -> e.properties.isAir);
+        for (Map.Entry<Item, Float> entry : ConfigUtil.getMap(COMPOSTER_INPUTS, ForgeRegistries.ITEMS.getValues(), ParsingUtil::parseFloat, e -> e >= 0 && e <= 1).entrySet())
+            if (entry.getValue() != null) ComposterBlock.CHANCES.put(entry.getKey(), entry.getValue());
+        for (Map.Entry<Block, Block> entry : ConfigUtil.getMap(AXE_BLOCKS, BLOCK_REGISTRY, ParsingUtil::parseBlock, e -> true).entrySet())
+            if (entry.getValue() != null) AxeItem.BLOCK_STRIPPING_MAP.put(entry.getKey(), entry.getValue());
+        for (Map.Entry<Block, Block> entry : ConfigUtil.getMap(SHOVEL_BLOCKS, BLOCK_REGISTRY, ParsingUtil::parseBlock, e -> true).entrySet())
+            if (entry.getValue() != null) ShovelItem.SHOVEL_LOOKUP.put(entry.getKey(), entry.getValue().getDefaultState());
+        for (Map.Entry<Block, Block> entry : ConfigUtil.getMap(HOE_BLOCKS, BLOCK_REGISTRY, ParsingUtil::parseBlock, e -> true).entrySet())
+            if (entry.getValue() != null) HoeItem.HOE_LOOKUP.put(entry.getKey(), entry.getValue().getDefaultState());
+        MODIFIERS.clear();
+        for (Map.Entry<EntityType<?>, Map<Attribute, List<AttributeModifier>>> entry : ConfigUtil.parseAttributeList(ENTITY_MODIFIERS).entrySet())
+            for (Attribute attribute : entry.getValue().keySet())
+                for (AttributeModifier modifier : entry.getValue().get(attribute)) {
+                    Map<Attribute, List<AttributeModifier>> map = MODIFIERS.getOrDefault(entry.getKey(), new HashMap<>());
+                    List<AttributeModifier> list = map.getOrDefault(attribute, new ArrayList<>());
+                    list.add(modifier);
+                    map.put(attribute, list);
+                    MODIFIERS.put(entry.getKey(), map);
+                }
+        dump(DUMP_BLOCKS_AFTER.get(), DUMP_BLOCKS_AFTER_NON_DEFAULT.get(), DUMP_ITEMS_AFTER.get(), DUMP_ITEMS_AFTER_NON_DEFAULT.get(), DUMP_ENCHANTMENTS_AFTER.get(), DUMP_GROUPS_AFTER.get(), DUMP_COMPOSTER_AFTER.get(), DUMP_STRIPPING_AFTER.get(), DUMP_PATHING_AFTER.get(), DUMP_TILLING_AFTER.get());
     }
 
-    private static void dump(boolean blocks, boolean blocksNonDefault, boolean items, boolean itemsNonDefault, boolean enchantments, boolean groups) {
+    private static void dump(boolean blocks, boolean blocksNonDefault, boolean items, boolean itemsNonDefault, boolean enchantments, boolean groups, boolean composter, boolean stripping, boolean pathing, boolean tilling) {
         if (blocks || blocksNonDefault) {
             Logger.forceInfo("Blocks:");
             for (Block block : ForgeRegistries.BLOCKS) {
@@ -648,6 +763,26 @@ public final class Config {
                 for (EnchantmentType type : types) builder.append(type.name().toLowerCase()).append(", ");
                 Logger.forceInfo(types.length > 0 ? builder.substring(0, builder.length() - 2) : builder.toString());
             }
+        }
+        if (composter) {
+            Logger.forceInfo("Composter inputs:");
+            for (Map.Entry<IItemProvider, Float> entry : ComposterBlock.CHANCES.entrySet())
+                Logger.forceInfo(entry.getKey().asItem().getRegistryName().toString() + " -> " + entry.getValue());
+        }
+        if (stripping) {
+            Logger.forceInfo("Stripping transitions:");
+            for (Map.Entry<Block, Block> entry : AxeItem.BLOCK_STRIPPING_MAP.entrySet())
+                Logger.forceInfo(entry.getKey().getRegistryName().toString() + " -> " + entry.getValue().getRegistryName().toString());
+        }
+        if (pathing) {
+            Logger.forceInfo("Pathing transitions:");
+            for (Map.Entry<Block, BlockState> entry : ShovelItem.SHOVEL_LOOKUP.entrySet())
+                Logger.forceInfo(entry.getKey().getRegistryName().toString() + " -> " + entry.getValue().getBlock().getRegistryName().toString());
+        }
+        if (tilling) {
+            Logger.forceInfo("Tilling transitions:");
+            for (Map.Entry<Block, BlockState> entry : HoeItem.HOE_LOOKUP.entrySet())
+                Logger.forceInfo(entry.getKey().getRegistryName().toString() + " -> " + entry.getValue().getBlock().getRegistryName().toString());
         }
     }
 
