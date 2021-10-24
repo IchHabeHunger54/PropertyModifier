@@ -15,6 +15,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import java.util.ArrayList;
 import java.util.function.Predicate;
 
+@SuppressWarnings("unused")
 public final class ParsingUtil {
     public static Boolean parseBoolean(String value, String entry, String config, Predicate<Boolean> predicate) {
         switch (value) {

@@ -46,7 +46,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-@SuppressWarnings({"ConstantConditions", "FieldMayBeFinal", "CommentedOutCode", "DuplicatedCode"})
+@SuppressWarnings({"CommentedOutCode", "ConstantConditions", "DuplicatedCode", "FieldMayBeFinal", "deprecation"})
 public final class Config {
     private static final Map<Block, Properties.Block> BLOCKS = new LinkedHashMap<>();
     private static final Map<Item, Properties.Item> ITEMS = new LinkedHashMap<>();
@@ -128,9 +128,7 @@ public final class Config {
         private static ForgeConfigSpec.ConfigValue<List<String>> CAN_GENERATE_IN_LOOT;
     */
     private static ForgeConfigSpec.ConfigValue<List<String>> ENCHANTMENT_RARITY;
-    /*
-        private static ForgeConfigSpec.ConfigValue<List<String>> CAN_COMBINE;
-    */
+//    private static ForgeConfigSpec.ConfigValue<List<String>> CAN_COMBINE;
     private static ForgeConfigSpec.ConfigValue<List<String>> ENCHANTMENT_ITEM_GROUP;
     private static ForgeConfigSpec.BooleanValue REMOVE_ENCHANTMENT_ITEM_GROUPS;
     private static ForgeConfigSpec.ConfigValue<List<String>> COMPOSTER_INPUTS;
@@ -231,9 +229,7 @@ public final class Config {
         CAN_GENERATE_IN_LOOT = builder.comment("Whether this item can generate from loot tables.").define("can_generate_in_loot", new ArrayList<>());
 */
         ENCHANTMENT_RARITY = builder.comment("The enchantment rarity of this enchantment. Must be one of common (10), uncommon (5), rare (2) and very_rare (1).").define("rarity", new ArrayList<>());
-/*
-        CAN_COMBINE = builder.comment("Two enchantments that can't be on the same item. Does not need to be set by both sides. Once you overwrite it for an enchantment, all previously existing restrictions will be removed, and you must re-add them if you still want them (though the restriction might still come from the other enchantment).").define("can_combine", new ArrayList<>());
-*/
+//        CAN_COMBINE = builder.comment("Two enchantments that can't be on the same item. Does not need to be set by both sides. Once you overwrite it for an enchantment, all previously existing restrictions will be removed, and you must re-add them if you still want them (though the restriction might still come from the other enchantment).").define("can_combine", new ArrayList<>());
         ENCHANTMENT_ITEM_GROUP = builder.comment("The item group this enchantment type's enchanted books are in. As soon as you add one for an item group, you need to re-add every enchantment type for that group as well.").define("group", new ArrayList<>());
         REMOVE_ENCHANTMENT_ITEM_GROUPS = builder.comment("Remove enchantment books from creative tabs. Runs before group, so re-adding is possible.").define("remove_item_groups", false);
         builder.pop();

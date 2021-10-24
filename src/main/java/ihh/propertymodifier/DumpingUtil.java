@@ -12,7 +12,7 @@ import net.minecraftforge.common.ToolType;
 
 import java.util.Collection;
 
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"ConstantConditions", "deprecation"})
 public final class DumpingUtil {
     public static void append(StringBuilder builder, String name, Object value) {
         builder.append(name).append(": ").append(value).append(", ");

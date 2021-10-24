@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-@SuppressWarnings({"unused", "ConstantConditions"})
+@SuppressWarnings({"ConstantConditions", "DuplicatedCode", "unused"})
 public final class ConfigUtil {
     public static <T extends IForgeRegistryEntry<T>, U> LinkedHashMap<T, U> getMap(ForgeConfigSpec.ConfigValue<List<String>> list, Collection<? extends T> registry, Function4<String, String, String, Predicate<U>, U> parserU, Predicate<U> predicateU) {
         LinkedHashMap<T, U> map = new LinkedHashMap<>();
@@ -227,8 +227,9 @@ public final class ConfigUtil {
             EntityType<?> type = fromCollection(array[0], ForgeRegistries.ENTITIES.getValues());
             Attribute attribute = fromCollection(array[1], ForgeRegistries.ATTRIBUTES.getValues());
             Float value = ParsingUtil.parseFloat(array[2], s, "entity.modifiers", e -> true);
-            AttributeModifier.Operation operation = AttributeModifier.Operation.byId(ParsingUtil.parseInt(array[3], s, "entity.modifiers", e -> e > -1 && e < 3));
-            if (type == null || attribute == null || value == null || operation == null) continue;
+            Integer op = ParsingUtil.parseInt(array[3], s, "entity.modifiers", e -> e > -1 && e < 3);
+            if (type == null || attribute == null || value == null || op == null) continue;
+            AttributeModifier.Operation operation = AttributeModifier.Operation.byId(op);
             Map<Attribute, List<AttributeModifier>> modifierMap = result.getOrDefault(type, new HashMap<>());
             List<AttributeModifier> modifiers = modifierMap.getOrDefault(attribute, new ArrayList<>());
             modifiers.add(new AttributeModifier(attribute.getAttributeName(), value, operation));

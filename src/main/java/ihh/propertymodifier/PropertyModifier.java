@@ -17,6 +17,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 import javax.annotation.Nonnull;
 
+@SuppressWarnings("unused")
 @Mod(PropertyModifier.MODID)
 public final class PropertyModifier {
     public static final String MODID = "propertymodifier";

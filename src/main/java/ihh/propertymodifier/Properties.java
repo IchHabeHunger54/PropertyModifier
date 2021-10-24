@@ -11,6 +11,7 @@ import org.antlr.v4.runtime.misc.Triple;
 
 import java.util.HashSet;
 
+@SuppressWarnings("unused")
 public final class Properties {
     public static class Block {
         public Float HARDNESS = null;
