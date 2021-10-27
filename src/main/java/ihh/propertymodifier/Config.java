@@ -633,8 +633,8 @@ public final class Config {
         for (ItemGroup group : ENCHANTMENT_GROUPS.keySet())
             group.setRelevantEnchantmentTypes(ENCHANTMENT_GROUPS.get(group).toArray(new EnchantmentType[0]));
         if (REMOVE_EMPTY_ITEM_GROUPS.get()) {
-            ArrayList<ItemGroup> groups = Lists.newArrayList(ItemGroup.GROUPS);
-            ArrayList<ItemGroup> result = Lists.newArrayList(ItemGroup.GROUPS);
+            List<ItemGroup> groups = Lists.newArrayList(ItemGroup.GROUPS);
+            List<ItemGroup> result = Lists.newArrayList(ItemGroup.GROUPS);
             for (ItemGroup group : groups) {
                 if (group.getRelevantEnchantmentTypes().length > 0) continue;
                 boolean b = false;
@@ -645,13 +645,18 @@ public final class Config {
                     }
                 if (!b) result.remove(group);
             }
+            while (result.size() < 4) result.add(null);
             result.add(4, ItemGroup.HOTBAR);
             result.add(5, ItemGroup.SEARCH);
+            while (result.size() < 11) result.add(null);
             result.add(11, ItemGroup.INVENTORY);
-            for (int i = 0; i < result.size(); i++) result.get(i).index = i;
+            for (int i = 0; i < result.size(); i++) {
+                ItemGroup group = result.get(i);
+                if (group != null) group.index = i;
+            }
             ItemGroup.GROUPS = result.toArray(new ItemGroup[0]);
+            ItemGroup.BUILDING_BLOCKS.index = 0;
         }
-        ItemGroup.BUILDING_BLOCKS.index = 0;
         if (COMPOSTER_TRANSITIONS == null)
             COMPOSTER_TRANSITIONS = new Object2FloatOpenHashMap<>(ComposterBlock.CHANCES);
         if (AXE_TRANSITIONS == null) AXE_TRANSITIONS = new HashMap<>(AxeItem.BLOCK_STRIPPING_MAP);
@@ -753,6 +758,7 @@ public final class Config {
         if (groups) {
             Logger.forceInfo("Item groups:");
             for (ItemGroup group : ItemGroup.GROUPS) {
+                if (group == null) continue;
                 EnchantmentType[] types = group.getRelevantEnchantmentTypes();
                 StringBuilder builder = new StringBuilder(group.getPath());
                 if (types.length > 0) builder.append(" - enchantment types: ");
