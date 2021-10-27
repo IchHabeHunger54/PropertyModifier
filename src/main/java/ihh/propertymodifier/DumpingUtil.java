@@ -114,9 +114,15 @@ public final class DumpingUtil {
     }
 
     public static void appendToolType(StringBuilder builder, Item item, boolean onlyIfNonDefault) {
-        Collection<ToolType> types = item.getToolTypes(null);
+        Collection<ToolType> types;
+        try { //needed for tconstruct compatibility
+            types = item.getToolTypes(null);
+        } catch (NullPointerException e) {
+            builder.append("tool types: unknown (probably a Tinkers' Construct tool), ");
+            return;
+        }
         StringBuilder typeBuilder = new StringBuilder();
-        if (!types.isEmpty()) for (ToolType type : types)
+        if (types != null && !types.isEmpty()) for (ToolType type : types)
             typeBuilder.append(type.getName()).append(" (harvest level: ").append(item.getHarvestLevel(null, type, null, null)).append("), ");
         if (!onlyIfNonDefault && typeBuilder.length() > 0)
             append(builder, "tool types", typeBuilder.substring(0, typeBuilder.length() - 2));
