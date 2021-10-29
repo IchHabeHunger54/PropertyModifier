@@ -148,10 +148,6 @@ public final class Config {
     static ForgeConfigSpec.ConfigValue<List<String>> VILLAGER_5_TRADES;
     static ForgeConfigSpec.ConfigValue<List<String>> TRADER_NORMAL_TRADES;
     static ForgeConfigSpec.ConfigValue<List<String>> TRADER_LAST_TRADES;
-    private static Object2FloatMap<IItemProvider> COMPOSTER_TRANSITIONS;
-    private static Map<Block, Block> AXE_TRANSITIONS;
-    private static Map<Block, BlockState> SHOVEL_TRANSITIONS;
-    private static Map<Block, BlockState> HOE_TRANSITIONS;
     private static boolean searchReload = false;
 
     static {
@@ -657,23 +653,18 @@ public final class Config {
             ItemGroup.GROUPS = result.toArray(new ItemGroup[0]);
             ItemGroup.BUILDING_BLOCKS.index = 0;
         }
-        if (COMPOSTER_TRANSITIONS == null)
-            COMPOSTER_TRANSITIONS = new Object2FloatOpenHashMap<>(ComposterBlock.CHANCES);
-        if (AXE_TRANSITIONS == null) AXE_TRANSITIONS = new HashMap<>(AxeItem.BLOCK_STRIPPING_MAP);
-        if (SHOVEL_TRANSITIONS == null) SHOVEL_TRANSITIONS = new HashMap<>(ShovelItem.SHOVEL_LOOKUP);
-        if (HOE_TRANSITIONS == null) HOE_TRANSITIONS = new HashMap<>(HoeItem.HOE_LOOKUP);
+        Object2FloatMap<IItemProvider> composterTransitions = new Object2FloatOpenHashMap<>(ComposterBlock.CHANCES);
+        Map<Block, Block> axeTransitions = new HashMap<>(AxeItem.BLOCK_STRIPPING_MAP);
+        Map<Block, BlockState> shovelTransitions = new HashMap<>(ShovelItem.SHOVEL_LOOKUP);
+        Map<Block, BlockState> hoeTransitions = new HashMap<>(HoeItem.HOE_LOOKUP);
         ComposterBlock.CHANCES.clear();
-        ComposterBlock.CHANCES.putAll(COMPOSTER_TRANSITIONS);
+        if (!COMPOSTER_CLEAR.get()) ComposterBlock.CHANCES.putAll(composterTransitions);
         AxeItem.BLOCK_STRIPPING_MAP = new HashMap<>();
-        AxeItem.BLOCK_STRIPPING_MAP.putAll(AXE_TRANSITIONS);
+        if (!AXE_CLEAR.get()) AxeItem.BLOCK_STRIPPING_MAP.putAll(axeTransitions);
         ShovelItem.SHOVEL_LOOKUP.clear();
-        ShovelItem.SHOVEL_LOOKUP.putAll(SHOVEL_TRANSITIONS);
+        if (!SHOVEL_CLEAR.get()) ShovelItem.SHOVEL_LOOKUP.putAll(shovelTransitions);
         HoeItem.HOE_LOOKUP.clear();
-        HoeItem.HOE_LOOKUP.putAll(HOE_TRANSITIONS);
-        if (COMPOSTER_CLEAR.get()) ComposterBlock.CHANCES.clear();
-        if (AXE_CLEAR.get()) AxeItem.BLOCK_STRIPPING_MAP = new HashMap<>();
-        if (SHOVEL_CLEAR.get()) ShovelItem.SHOVEL_LOOKUP.clear();
-        if (HOE_CLEAR.get()) HoeItem.HOE_LOOKUP.clear();
+        if (!HOE_CLEAR.get()) HoeItem.HOE_LOOKUP.putAll(hoeTransitions);
         List<Block> BLOCK_REGISTRY = new ArrayList<>(ForgeRegistries.BLOCKS.getValues());
         BLOCK_REGISTRY.removeIf(e -> e.properties.isAir);
         for (Map.Entry<Item, Float> entry : ConfigUtil.getMap(COMPOSTER_INPUTS, ForgeRegistries.ITEMS.getValues(), ParsingUtil::parseFloat, e -> e >= 0 && e <= 1).entrySet())
@@ -769,7 +760,8 @@ public final class Config {
         if (composter) {
             Logger.forceInfo("Composter inputs:");
             for (Map.Entry<IItemProvider, Float> entry : ComposterBlock.CHANCES.entrySet())
-                Logger.forceInfo(entry.getKey().asItem().getRegistryName().toString() + " -> " + entry.getValue());
+                if (entry.getKey() != null && entry.getKey().asItem() != null)
+                    Logger.forceInfo(entry.getKey().asItem().getRegistryName().toString() + " -> " + entry.getValue());
         }
         if (stripping) {
             Logger.forceInfo("Stripping transitions:");
