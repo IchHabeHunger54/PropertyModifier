@@ -1,33 +1,32 @@
 package ihh.propertymodifier;
 
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentData;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.merchant.villager.VillagerTrades;
-import net.minecraft.entity.villager.IVillagerDataHolder;
-import net.minecraft.entity.villager.VillagerType;
-import net.minecraft.item.DyeColor;
-import net.minecraft.item.DyeItem;
-import net.minecraft.item.DyeableArmorItem;
-import net.minecraft.item.EnchantedBookItem;
-import net.minecraft.item.FilledMapItem;
-import net.minecraft.item.IDyeableArmorItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.item.MerchantOffer;
-import net.minecraft.item.SuspiciousStewItem;
-import net.minecraft.potion.Effect;
-import net.minecraft.potion.Potion;
-import net.minecraft.potion.PotionUtils;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.world.gen.feature.structure.Structure;
-import net.minecraft.world.server.ServerWorld;
-import net.minecraft.world.storage.MapData;
-import net.minecraft.world.storage.MapDecoration;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.npc.VillagerDataHolder;
+import net.minecraft.world.entity.npc.VillagerTrades;
+import net.minecraft.world.entity.npc.VillagerType;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.DyeItem;
+import net.minecraft.world.item.DyeableLeatherItem;
+import net.minecraft.world.item.EnchantedBookItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.MapItem;
+import net.minecraft.world.item.SuspiciousStewItem;
+import net.minecraft.world.item.alchemy.Potion;
+import net.minecraft.world.item.alchemy.PotionUtils;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.EnchantmentInstance;
+import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.level.levelgen.feature.StructureFeature;
+import net.minecraft.world.level.saveddata.maps.MapDecoration;
+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.antlr.v4.runtime.misc.Pair;
 
@@ -40,7 +39,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
 
-public class Trade implements VillagerTrades.ITrade {
+public class Trade implements VillagerTrades.ItemListing {
     protected final int maxUses;
     protected final int xpValue;
     protected final float priceMultiplier;
@@ -95,28 +94,32 @@ public class Trade implements VillagerTrades.ITrade {
 
         @Override
         protected ItemStack getSellItem() {
-            if (sell instanceof DyeableArmorItem) {
-                ArrayList<DyeItem> l = new ArrayList<>();
-                l.add(DyeItem.getItem(DyeColor.byId(rand.nextInt(16))));
-                if (rand.nextFloat() > 0.7F) l.add(DyeItem.getItem(DyeColor.byId(rand.nextInt(16))));
-                if (rand.nextFloat() > 0.8F) l.add(DyeItem.getItem(DyeColor.byId(rand.nextInt(16))));
-                return IDyeableArmorItem.dyeItem(new ItemStack(sell), l);
+            if (sell instanceof DyeableLeatherItem) {
+                ArrayList<DyeItem> list = new ArrayList<>();
+                list.add(DyeItem.byColor(DyeColor.byId(rand.nextInt(16))));
+                if (rand.nextFloat() > 0.7F) {
+                    list.add(DyeItem.byColor(DyeColor.byId(rand.nextInt(16))));
+                }
+                if (rand.nextFloat() > 0.8F) {
+                    list.add(DyeItem.byColor(DyeColor.byId(rand.nextInt(16))));
+                }
+                return DyeableLeatherItem.dyeArmor(new ItemStack(sell), list);
             }
             return new ItemStack(sell);
         }
     }
 
     public static final class MapTrade extends Trade {
-        private final Structure<?> structure;
+        private final StructureFeature<?> structure;
         private final MapDecoration.Type mapDecoration;
 
-        public MapTrade(int uses, int xp, float price, Item buy, int buyCount, Structure<?> structureIn, MapDecoration.Type mapDecorationIn) {
+        public MapTrade(int uses, int xp, float price, Item buy, int buyCount, StructureFeature<?> structureIn, MapDecoration.Type mapDecorationIn) {
             super(uses, xp, price, buy, buyCount, Items.MAP, 1);
             structure = structureIn;
             mapDecoration = mapDecorationIn;
         }
 
-        public MapTrade(int uses, int xp, float price, Item buy, int buyCount, Item buySecond, int buySecondCount, Structure<?> structureIn, MapDecoration.Type mapDecorationIn) {
+        public MapTrade(int uses, int xp, float price, Item buy, int buyCount, Item buySecond, int buySecondCount, StructureFeature<?> structureIn, MapDecoration.Type mapDecorationIn) {
             super(uses, xp, price, buy, buyCount, buySecond, buySecondCount, Items.MAP, 1);
             structure = structureIn;
             mapDecoration = mapDecorationIn;
@@ -124,15 +127,14 @@ public class Trade implements VillagerTrades.ITrade {
 
         @Override
         protected ItemStack getSellItem() {
-            if (trader.world instanceof ServerWorld) {
-                ServerWorld w = (ServerWorld) trader.world;
-                BlockPos p = w.getStructureLocation(structure, trader.getPosition(), 100, true);
-                if (p != null) {
-                    ItemStack i = FilledMapItem.setupNewMap(w, p.getX(), p.getZ(), (byte) 2, true, true);
-                    FilledMapItem.func_226642_a_(w, i);
-                    MapData.addTargetDecoration(i, p, "+", mapDecoration);
-                    i.setDisplayName(new TranslationTextComponent("filled_map." + structure.getStructureName().toLowerCase(Locale.ROOT)));
-                    return i;
+            if (trader.level instanceof ServerLevel level) {
+                BlockPos pos = level.findNearestMapFeature(structure, trader.blockPosition(), 100, true);
+                if (pos != null) {
+                    ItemStack item = MapItem.create(level, pos.getX(), pos.getZ(), (byte) 2, true, true);
+                    MapItem.renderBiomePreviewMap(level, item);
+                    MapItemSavedData.addTargetDecoration(item, pos, "+", mapDecoration);
+                    item.setHoverName(new TranslatableComponent("filled_map." + structure.getFeatureName().toLowerCase(Locale.ROOT)));
+                    return item;
                 }
             }
             return new ItemStack(sell, sellCount);
@@ -149,12 +151,12 @@ public class Trade implements VillagerTrades.ITrade {
 
         @Override
         protected ItemStack getBuyItem() {
-            return trader instanceof IVillagerDataHolder ? new ItemStack(items.get(((IVillagerDataHolder) trader).getVillagerData().getType()).a.a, items.get(((IVillagerDataHolder) trader).getVillagerData().getType()).a.b) : ItemStack.EMPTY;
+            return trader instanceof VillagerDataHolder holder ? new ItemStack(items.get(holder.getVillagerData().getType()).a.a, items.get(holder.getVillagerData().getType()).a.b) : ItemStack.EMPTY;
         }
 
         @Override
         protected ItemStack getSellItem() {
-            return trader instanceof IVillagerDataHolder ? new ItemStack(items.get(((IVillagerDataHolder) trader).getVillagerData().getType()).b.a, items.get(((IVillagerDataHolder) trader).getVillagerData().getType()).b.b) : ItemStack.EMPTY;
+            return trader instanceof VillagerDataHolder holder ? new ItemStack(items.get(holder.getVillagerData().getType()).b.a, items.get(holder.getVillagerData().getType()).b.b) : ItemStack.EMPTY;
         }
     }
 
@@ -177,21 +179,25 @@ public class Trade implements VillagerTrades.ITrade {
         @Override
         public MerchantOffer getOffer(@Nonnull Entity trader, @Nonnull Random rand) {
             if (enchantment != null) return super.getOffer(trader, rand);
-            List<Enchantment> l = StreamSupport.stream(ForgeRegistries.ENCHANTMENTS.spliterator(), false).filter(Enchantment::canVillagerTrade).collect(Collectors.toList());
-            Enchantment e = l.get(rand.nextInt(l.size()));
-            int i = MathHelper.nextInt(rand, e.getMinLevel(), e.getMaxLevel());
-            ItemStack s = EnchantedBookItem.getEnchantedItemStack(new EnchantmentData(e, i));
-            int j = 2 + rand.nextInt(5 + i * 10) + 3 * i;
-            if (e.isTreasureEnchantment()) j *= 2;
-            if (j > 64) j = 64;
-            return new MerchantOffer(new ItemStack(buy, j), new ItemStack(buy2, buy2Count), s, maxUses, xpValue, priceMultiplier);
+            List<Enchantment> list = StreamSupport.stream(ForgeRegistries.ENCHANTMENTS.spliterator(), false).filter(Enchantment::isTradeable).collect(Collectors.toList());
+            Enchantment enchantment = list.get(rand.nextInt(list.size()));
+            int level = Mth.nextInt(rand, enchantment.getMinLevel(), enchantment.getMaxLevel());
+            ItemStack item = EnchantedBookItem.createForEnchantment(new EnchantmentInstance(enchantment, level));
+            int cost = 2 + rand.nextInt(5 + level * 10) + 3 * level;
+            if (enchantment.isTreasureOnly()) {
+                cost *= 2;
+            }
+            if (cost > 64) {
+                cost = 64;
+            }
+            return new MerchantOffer(new ItemStack(buy, cost), new ItemStack(buy2, buy2Count), item, maxUses, xpValue, priceMultiplier);
         }
 
         @Override
         protected ItemStack getSellItem() {
-            ItemStack s = new ItemStack(sell);
-            s.addEnchantment(enchantment, level);
-            return s;
+            ItemStack item = new ItemStack(sell);
+            item.enchant(enchantment, level);
+            return item;
         }
     }
 
@@ -214,17 +220,16 @@ public class Trade implements VillagerTrades.ITrade {
         @Override
         public MerchantOffer getOffer(@Nonnull Entity trader, @Nonnull Random rand) {
             if (enchantment != null) return super.getOffer(trader, rand);
-            int e = 5 + rand.nextInt(15);
-            ItemStack i = new ItemStack(buy, e);
-            ItemStack j = EnchantmentHelper.addRandomEnchantment(rand, new ItemStack(sell), e, false);
-            return new MerchantOffer(i, new ItemStack(buy2, buy2Count), j, maxUses, xpValue, priceMultiplier);
+            int level = 5 + rand.nextInt(15);
+            ItemStack item = EnchantmentHelper.enchantItem(rand, new ItemStack(sell), level, false);
+            return new MerchantOffer(new ItemStack(buy, level), new ItemStack(buy2, buy2Count), item, maxUses, xpValue, priceMultiplier);
         }
 
         @Override
         protected ItemStack getSellItem() {
-            ItemStack s = new ItemStack(sell);
-            s.addEnchantment(enchantment, level);
-            return s;
+            ItemStack item = new ItemStack(sell);
+            item.enchant(enchantment, level);
+            return item;
         }
     }
 
@@ -243,21 +248,21 @@ public class Trade implements VillagerTrades.ITrade {
 
         @Override
         protected ItemStack getSellItem() {
-            return PotionUtils.addPotionToItemStack(new ItemStack(sell, sellCount), potion.get(rand.nextInt(potion.size())));
+            return PotionUtils.setPotion(new ItemStack(sell, sellCount), potion.get(rand.nextInt(potion.size())));
         }
     }
 
     public static final class StewTrade extends Trade {
-        private final Effect effect;
+        private final MobEffect effect;
         private final int duration;
 
-        public StewTrade(int uses, int xp, float price, Item buy, int buyCount, Effect effectIn, int durationIn) {
+        public StewTrade(int uses, int xp, float price, Item buy, int buyCount, MobEffect effectIn, int durationIn) {
             super(uses, xp, price, buy, buyCount, Items.SUSPICIOUS_STEW, 1);
             effect = effectIn;
             duration = durationIn;
         }
 
-        public StewTrade(int uses, int xp, float price, Item buy, int buyCount, Item buySecond, int buySecondCount, Effect effectIn, int durationIn) {
+        public StewTrade(int uses, int xp, float price, Item buy, int buyCount, Item buySecond, int buySecondCount, MobEffect effectIn, int durationIn) {
             super(uses, xp, price, buy, buyCount, buySecond, buySecondCount, Items.SUSPICIOUS_STEW, 1);
             effect = effectIn;
             duration = durationIn;
@@ -265,9 +270,9 @@ public class Trade implements VillagerTrades.ITrade {
 
         @Override
         protected ItemStack getSellItem() {
-            ItemStack i = new ItemStack(sell, sellCount);
-            SuspiciousStewItem.addEffect(i, effect, duration);
-            return i;
+            ItemStack item = new ItemStack(sell, sellCount);
+            SuspiciousStewItem.saveMobEffect(item, effect, duration);
+            return item;
         }
     }
 }

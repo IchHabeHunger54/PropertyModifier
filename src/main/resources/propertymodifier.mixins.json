@@ -1,19 +1,14 @@
 {
   "required": true,
   "package": "ihh.propertymodifier.mixin",
-  "compatibilityLevel": "JAVA_8",
+  "compatibilityLevel": "JAVA_17",
   "refmap": "propertymodifier.refmap.json",
   "mixins": [
-    "MixinAbstractBlockState",
     "MixinArmorItem",
-    "MixinAxeItem",
-    "MixinBlock",
     "MixinBlockState",
+    "MixinBlockStateBase",
     "MixinElytraItem",
-    "MixinEnchantment",
-    "MixinForgeHooks",
     "MixinItem",
-    "MixinPickaxeItem",
     "MixinShieldItem",
     "MixinTieredItem"
   ],
