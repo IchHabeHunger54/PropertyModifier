@@ -1,13 +1,9 @@
 package ihh.propertymodifier;
 
 import com.mojang.datafixers.util.Function4;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.npc.VillagerProfession;
-import net.minecraft.world.entity.npc.VillagerTrades;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.IForgeRegistryEntry;
@@ -15,7 +11,6 @@ import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.misc.Triple;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -111,87 +106,6 @@ public final class ConfigUtil {
             return null;
         }
         return array;
-    }
-
-    public static HashMap<VillagerProfession, Int2ObjectOpenHashMap<VillagerTrades.ItemListing[]>> villagerTrades(List<String> trade1, List<String> trade2, List<String> trade3, List<String> trade4, List<String> trade5) {
-        HashMap<VillagerProfession, Int2ObjectOpenHashMap<VillagerTrades.ItemListing[]>> result = new HashMap<>();
-        List<List<String>> filtered1 = filterTrades(trade1, 4);
-        List<List<String>> filtered2 = filterTrades(trade2, 4);
-        List<List<String>> filtered3 = filterTrades(trade3, 4);
-        List<List<String>> filtered4 = filterTrades(trade4, 4);
-        List<List<String>> filtered5 = filterTrades(trade5, 4);
-        for (VillagerProfession prof : ForgeRegistries.PROFESSIONS.getValues()) {
-            result.put(prof, new Int2ObjectOpenHashMap<>());
-            result.get(prof).put(1, villagerTrades(prof, filtered1));
-            result.get(prof).put(2, villagerTrades(prof, filtered2));
-            result.get(prof).put(3, villagerTrades(prof, filtered3));
-            result.get(prof).put(4, villagerTrades(prof, filtered4));
-            result.get(prof).put(5, villagerTrades(prof, filtered5));
-            for (int i = 1; i <= 5; i++) {
-                if (result.get(prof).get(i) == null || result.get(prof).get(i).length == 0) {
-                    result.getOrDefault(prof, new Int2ObjectOpenHashMap<>()).put(i, VillagerTrades.TRADES.getOrDefault(prof, new Int2ObjectOpenHashMap<>()).get(i));
-                }
-            }
-        }
-        return result;
-    }
-
-    private static VillagerTrades.ItemListing[] villagerTrades(VillagerProfession prof, List<List<String>> list) {
-        List<VillagerTrades.ItemListing> result = new ArrayList<>();
-        list.stream().filter(e -> ForgeRegistries.PROFESSIONS.getValue(new ResourceLocation(e.get(0))) == prof).forEach(e -> {
-            try {
-                int uses = Integer.parseInt(e.get(1));
-                int xp = Integer.parseInt(e.get(2));
-                float price = Float.parseFloat(e.get(3));
-                if (uses < 1 || xp < 1 || price < 0 || price >= 1) return;
-                switch (e.get(4)) {
-                    case "normal" -> TradeUtil.addTrade(result, uses, xp, price, new ArrayList<>(e.subList(5, e.size())));
-                    case "dyed" -> TradeUtil.addDyedTrade(result, uses, xp, price, new ArrayList<>(e.subList(5, e.size())));
-                    case "map" -> TradeUtil.addMapTrade(result, uses, xp, price, new ArrayList<>(e.subList(5, e.size())));
-                    case "biome" -> TradeUtil.addBiomeTrade(result, uses, xp, price, new ArrayList<>(e.subList(5, e.size())));
-                    case "enchantedbook" -> TradeUtil.addEnchantedBookTrade(result, uses, xp, price, new ArrayList<>(e.subList(5, e.size())));
-                    case "enchanteditem" -> TradeUtil.addEnchantedItemTrade(result, uses, xp, price, new ArrayList<>(e.subList(5, e.size())));
-                    case "potion" -> TradeUtil.addPotionTrade(result, uses, xp, price, new ArrayList<>(e.subList(5, e.size())));
-                    case "stew" -> TradeUtil.addStewTrade(result, uses, xp, price, new ArrayList<>(e.subList(5, e.size())));
-                }
-            } catch (RuntimeException x) {
-                x.printStackTrace();
-            }
-        });
-        return result.toArray(new VillagerTrades.ItemListing[0]);
-    }
-
-    public static Int2ObjectOpenHashMap<VillagerTrades.ItemListing[]> traderTrades(List<String> trade1, List<String> trade2) {
-        Int2ObjectOpenHashMap<VillagerTrades.ItemListing[]> result = new Int2ObjectOpenHashMap<>();
-        result.put(1, traderTrades(filterTrades(trade1, 2)));
-        result.put(2, traderTrades(filterTrades(trade2, 2)));
-        return result;
-    }
-
-    private static VillagerTrades.ItemListing[] traderTrades(List<List<String>> list) {
-        List<VillagerTrades.ItemListing> result = new ArrayList<>();
-        list.forEach(e -> {
-            try {
-                int uses = Integer.parseInt(e.get(0));
-                float price = Float.parseFloat(e.get(1));
-                switch (e.get(2)) {
-                    case "normal" -> TradeUtil.addTrade(result, uses, 1, price, new ArrayList<>(e.subList(3, e.size())));
-                    case "dyed" -> TradeUtil.addDyedTrade(result, uses, 1, price, new ArrayList<>(e.subList(3, e.size())));
-                    case "map" -> TradeUtil.addMapTrade(result, uses, 1, price, new ArrayList<>(e.subList(3, e.size())));
-                    case "enchantedbook" -> TradeUtil.addEnchantedBookTrade(result, uses, 1, price, new ArrayList<>(e.subList(3, e.size())));
-                    case "enchanteditem" -> TradeUtil.addEnchantedItemTrade(result, uses, 1, price, new ArrayList<>(e.subList(3, e.size())));
-                    case "potion" -> TradeUtil.addPotionTrade(result, uses, 1, price, new ArrayList<>(e.subList(3, e.size())));
-                    case "stew" -> TradeUtil.addStewTrade(result, uses, 1, price, new ArrayList<>(e.subList(3, e.size())));
-                }
-            } catch (RuntimeException x) {
-                x.printStackTrace();
-            }
-        });
-        return result.toArray(new VillagerTrades.ItemListing[0]);
-    }
-
-    private static List<List<String>> filterTrades(List<String> list, int size) {
-        return list.stream().map(e -> Arrays.asList(e.split(";"))).filter(e -> e.size() > size).collect(Collectors.toList());
     }
 
     public static HashMap<EntityType<?>, Map<Attribute, List<AttributeModifier>>> parseAttributeList(ForgeConfigSpec.ConfigValue<List<String>> config) {
