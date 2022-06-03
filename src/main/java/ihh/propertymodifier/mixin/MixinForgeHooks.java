@@ -9,6 +9,7 @@ import net.minecraft.item.TieredItem;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockReader;
 import net.minecraftforge.common.ForgeHooks;
+import net.minecraftforge.common.ToolType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -20,7 +21,8 @@ public class MixinForgeHooks {
     private static void canHarvestBlock(BlockState state, PlayerEntity player, IBlockReader world, BlockPos pos, CallbackInfoReturnable<Boolean> callback) {
         ItemStack is = player.getHeldItemMainhand();
         Item item = is.getItem();
-        if (item instanceof TieredItem && Config.MIXIN_TOOL_HARVEST_LEVEL.containsKey(item))
-            callback.setReturnValue(is.getToolTypes().stream().findAny().orElse(null) == state.getHarvestTool() && (Config.MIXIN_TOOL_HARVEST_LEVEL.containsKey((TieredItem) item) ? Config.MIXIN_TOOL_HARVEST_LEVEL.get((TieredItem) item) : is.getHarvestLevel(is.getToolTypes().stream().findAny().orElse(null), player, state)) >= state.getHarvestLevel());
+        ToolType tool = state.getHarvestTool();
+        if (item instanceof TieredItem && Config.MIXIN_TOOL_HARVEST_LEVEL.containsKey(item) && tool != null)
+            callback.setReturnValue(tool.equals(is.getToolTypes().stream().findAny().orElse(null)) && (Config.MIXIN_TOOL_HARVEST_LEVEL.containsKey((TieredItem) item) ? Config.MIXIN_TOOL_HARVEST_LEVEL.get((TieredItem) item) : is.getHarvestLevel(is.getToolTypes().stream().findAny().orElse(null), player, state)) >= state.getHarvestLevel());
     }
 }
