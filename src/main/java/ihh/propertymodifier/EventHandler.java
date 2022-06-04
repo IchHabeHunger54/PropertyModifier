@@ -12,7 +12,7 @@ import net.minecraftforge.fml.common.Mod;
 import java.util.List;
 import java.util.Map;
 
-@Mod.EventBusSubscriber(modid = PropertyModifier.MODID)
+@Mod.EventBusSubscriber(modid = PropertyModifier.MOD_ID)
 public final class EventHandler {
     @SubscribeEvent
     public static void entityJoinWorld(EntityJoinWorldEvent e) {

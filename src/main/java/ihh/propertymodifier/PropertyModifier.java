@@ -1,7 +1,8 @@
 package ihh.propertymodifier;
 
-import net.minecraft.tags.ItemTags;
-import net.minecraft.tags.Tag;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -17,11 +18,11 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 import javax.annotation.Nonnull;
 
-@Mod(PropertyModifier.MODID)
+@Mod(PropertyModifier.MOD_ID)
 public final class PropertyModifier {
-    public static final String MODID = "propertymodifier";
-    public static final Tag<Item> SHIELD_REPAIR_MATERIAL = ItemTags.bind("propertymodifier:shield_repair_material");
-    public static final Tag<Item> ELYTRA_REPAIR_MATERIAL = ItemTags.bind("propertymodifier:elytra_repair_material");
+    public static final String MOD_ID = "propertymodifier";
+    public static final TagKey<Item> SHIELD_REPAIR_MATERIAL = TagKey.create(Registry.ITEM_REGISTRY, new ResourceLocation(MOD_ID, "shield_repair_material"));
+    public static final TagKey<Item> ELYTRA_REPAIR_MATERIAL = TagKey.create(Registry.ITEM_REGISTRY, new ResourceLocation(MOD_ID, "elytra_repair_material"));
     public static CreativeModeTab EMPTY = new CreativeModeTab("none") {
         @Nonnull
         @Override

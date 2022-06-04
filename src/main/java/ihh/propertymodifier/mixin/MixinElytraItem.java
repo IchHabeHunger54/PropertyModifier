@@ -12,6 +12,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class MixinElytraItem {
     @Inject(at = @At("HEAD"), method = "isValidRepairItem(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemStack;)Z", cancellable = true)
     private void isValidRepairItem(ItemStack toRepair, ItemStack repair, CallbackInfoReturnable<Boolean> callback) {
-        callback.setReturnValue(PropertyModifier.ELYTRA_REPAIR_MATERIAL.contains(repair.getItem()));
+        callback.setReturnValue(repair.is(PropertyModifier.ELYTRA_REPAIR_MATERIAL));
     }
 }

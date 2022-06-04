@@ -5,19 +5,29 @@ import groovy.json.JsonOutput
 buildscript {
     repositories {
         maven { url = 'https://files.minecraftforge.net/maven' }
-        maven { url = 'https://repo.spongepowered.org/repository/maven-public' }
+        maven { url = 'https://maven.parchmentmc.org' }
         mavenCentral()
     }
     dependencies {
+        classpath group: 'org.codehaus.groovy', name: 'groovy-all', version: '3.0.8', ext: 'pom'
+        classpath group: 'org.apache.maven', name: 'maven-plugin-api', version: '3.8.1'
         classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: "${project.forgegradle_version}", changing: true
-        classpath group: 'org.spongepowered', name: 'mixingradle', version: "${project.mixingradle_version}"
+        classpath group: 'org.spongepowered', name: 'mixingradle', version: "${project.mixingradle_version}", changing: true
+        classpath group: 'org.parchmentmc', name: 'librarian', version: '1.+'
     }
+}
+
+plugins {
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'org.spongepowered.mixin'
+apply plugin: 'org.parchmentmc.librarian.forgegradle'
 apply plugin: 'idea'
 
 repositories {
+    mavenLocal()
+    mavenCentral()
     maven {
         name = "Progwml6 maven"
         url = "https://dvs1.progwml6.com/files/maven/"
@@ -26,12 +36,40 @@ repositories {
         name = "ModMaven"
         url = "https://modmaven.k-4u.nl"
     }
+    maven {
+        name = 'Minecraftschurli Maven'
+        url = 'https://minecraftschurli.ddns.net/repository/maven-public/'
+        content {
+            includeGroup 'com.github.ichhabehunger54'
+            includeGroup 'com.github.minecraftschurli'
+        }
+    }
 }
 
 group = "${project.mod_group}"
 version = "${project.mc_version}-${project.mod_version}"
 archivesBaseName = "${project.mod_id}"
 java.toolchain.languageVersion = JavaLanguageVersion.of(project.java_version)
+
+configurations {
+    include { transitive = false }
+    library
+    shade
+    implementation.extendsFrom include
+    implementation.extendsFrom library
+    implementation.extendsFrom shade
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${project.mc_version}-${project.forge_version}"
+    annotationProcessor group: 'org.spongepowered', name: 'mixin', version: project.mixin_version, classifier: 'processor'
+    compileOnly fg.deobf("mezz.jei:jei-${project.mc_version}:${project.jei_version}:api")
+    runtimeOnly fg.deobf("mezz.jei:jei-${project.mc_version}:${project.jei_version}")
+    include fg.deobf("com.github.minecraftschurli:codeclib:1.18.2-1.0-SNAPSHOT")
+    include fg.deobf("com.github.minecraftschurli:simplenetlib:1.18.2-1.0-SNAPSHOT")
+//    shade "com.github.minecraftschurli:codeclib:1.18.2-1.0-SNAPSHOT"
+//    shade "com.github.minecraftschurli:simplenetlib:1.18.2-1.0-SNAPSHOT"
+}
 
 minecraft {
     mappings channel: "${project.mappings_channel}", version: "${project.mappings_version}"
@@ -61,7 +99,7 @@ minecraft {
             workingDirectory project.file('run')
             property 'forge.logging.console.level', 'debug'
             arg "-mixin.config=${project.mod_id}.mixins.json"
-            args "--mod", "${project.mod_id}", '--all', '--output', file('src/main/generated/'), '--existing', file('src/main/resources/')
+            args '--mod', "${project.mod_id}", '--all', '--output', file('src/main/generated/'), '--existing', file('src/main/resources/')
             mods {
                 propertymodifier {
                     source sourceSets.main
@@ -73,22 +111,26 @@ minecraft {
 
 sourceSets.main.resources { srcDir 'src/main/generated' }
 
-dependencies {
-    minecraft "net.minecraftforge:forge:${project.mc_version}-${project.forge_version}"
-    annotationProcessor "org.spongepowered:mixin:${project.mixin_version}:processor"
-    //compileOnly fg.deobf("mezz.jei:jei-${project.mc_version}:${project.jei_version}:api")
-    //runtimeOnly fg.deobf("mezz.jei:jei-${project.mc_version}:${project.jei_version}")
+minecraft.runs.all {
+    lazyToken('minecraft_classpath') {
+        configurations.library.copyRecursive().resolve().collect { it.absolutePath }.join(File.pathSeparator)
+    }
 }
 
 processResources {
     duplicatesStrategy DuplicatesStrategy.INCLUDE
     from(sourceSets.main.resources.srcDirs) {
         include 'META-INF/mods.toml'
-        expand 'mod_id': mod_id, 'mod_name': mod_name, 'mod_version': mod_version,
-                'mod_url': mod_url, 'mod_updates': mod_updates,
-                'mod_authors': mod_authors, 'mod_credits': mod_credits,
-                'mod_description': mod_description, 'mod_logo': mod_logo,
-                'mc_version_range': mc_version_range, 'forge_version_range': forge_version_range, 'loader_version_range': loader_version_range
+        expand 'mod_id': mod_id, 'mod_name': mod_name,
+                'mod_version': mod_version, 'mod_url': mod_url,
+                'mod_updates': mod_updates,
+                'mod_authors': mod_authors,
+                'mod_credits': mod_credits,
+                'mod_description': mod_description,
+                'mod_logo': mod_logo,
+                'mc_version_range': mc_version_range,
+                'forge_version_range': forge_version_range,
+                'loader_version_range': loader_version_range
     }
     from(sourceSets.main.resources.srcDirs) {
         exclude 'META-INF/mods.toml'
@@ -112,15 +154,26 @@ jar {
                 "Implementation-Vendor": "${project.mod_authors}",
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
                 "Built-On-Java": "${System.getProperty('java.vm.version')} (${System.getProperty('java.vm.vendor')})",
-                "Built-On": "${project.mc_version}-${project.forge_version}",
-                "MixinConfigs": "${project.mod_id}.mixins.json"
+                "Built-On": "${project.mc_version}-${project.forge_version}"
         )
     }
 }
-
 jar.finalizedBy('reobfJar')
+
+shadowJar {
+    archiveClassifier = ''
+    configurations = [project.configurations.shade]
+    relocate "com.github.minecraftschurli.codeclib", "${project.group}.relocated.codeclib"
+    relocate "com.github.minecraftschurli.simplenetlib", "${project.group}.relocated.simplenetlib"
+    finalizedBy 'reobfShadowJar'
+}
+
+assemble.dependsOn shadowJar
+
+reobf {
+    shadowJar {}
+}
 
 mixin {
     add sourceSets.main, "${project.mod_id}.refmap.json"
-    config "${project.mod_id}.mixins.json"
 }

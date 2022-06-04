@@ -1,6 +1,8 @@
 package ihh.propertymodifier;
 
-import net.minecraft.tags.ItemTags;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Rarity;
@@ -111,7 +113,7 @@ public final class ParsingUtil {
     }
 
     public static Lazy<Ingredient> parseRepairMaterial(String value, String entry, String config, Predicate<Lazy<Ingredient>> predicate) {
-        return Lazy.of(() -> value.startsWith("#") ? Ingredient.of(ItemTags.bind(value.substring(1))) : Ingredient.of(ConfigUtil.fromCollection(value, new ArrayList<>(ForgeRegistries.ITEMS.getValues()))));
+        return Lazy.of(() -> value.startsWith("#") ? Ingredient.of(TagKey.create(Registry.ITEM_REGISTRY, new ResourceLocation(value.substring(1)))) : Ingredient.of(ConfigUtil.fromCollection(value, new ArrayList<>(ForgeRegistries.ITEMS.getValues()))));
     }
 
     public static SoundType parseSoundType(String value, String entry, String config, Predicate<SoundType> predicate) {
