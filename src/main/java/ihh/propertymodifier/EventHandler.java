@@ -3,34 +3,66 @@ package ihh.propertymodifier;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraftforge.event.entity.EntityJoinWorldEvent;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.common.ToolActions;
+import net.minecraftforge.event.entity.EntityJoinLevelEvent;
+import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-
-import java.util.List;
-import java.util.Map;
+import net.minecraftforge.registries.ForgeRegistries;
 
 @Mod.EventBusSubscriber(modid = PropertyModifier.MOD_ID)
 public final class EventHandler {
     @SubscribeEvent
-    public static void entityJoinWorld(EntityJoinWorldEvent e) {
-        if (e.getEntity() instanceof Mob mob && !mob.getPersistentData().getBoolean("alreadyAppliedAttributes")) {
-            if (Config.MODIFIERS.containsKey(mob.getType())) {
-                for (Map.Entry<Attribute, List<AttributeModifier>> entry : Config.MODIFIERS.get(mob.getType()).entrySet()) {
-                    for (AttributeModifier modifier : entry.getValue()) {
-                        AttributeInstance attribute = mob.getAttribute(entry.getKey());
-                        if (attribute == null) attribute = new AttributeInstance(entry.getKey(), x -> {
-                        });
-                        attribute.addPermanentModifier(modifier);
-                    }
-                    if (entry.getKey() == Attributes.MAX_HEALTH) {
-                        mob.setHealth(mob.getMaxHealth());
+    static void blockToolModification(BlockEvent.BlockToolModificationEvent e) {
+        Block block = e.getContext().getLevel().getBlockState(e.getPos()).getBlock();
+        if (e.getToolAction() == ToolActions.AXE_STRIP) {
+            if (Config.AXE_STRIPPING.containsKey(block)) {
+                e.setFinalState(Config.AXE_STRIPPING.get(block));
+            } else if (Config.CLEAR_STRIPPING.get()) {
+                e.setFinalState(null);
+            }
+        }
+        if (Config.SHOVEL_FLATTENING.containsKey(block)) {
+            e.setFinalState(Config.SHOVEL_FLATTENING.get(block));
+        } else if (Config.CLEAR_FLATTENING.get()) {
+            e.setFinalState(null);
+        }
+        if (Config.HOE_TILLING.containsKey(block)) {
+            Config.Triple<BlockState, Boolean, Item> triple = Config.HOE_TILLING.get(block);
+            if (triple.b != null && triple.b && !e.getLevel().getBlockState(e.getPos().above()).isAir()) return;
+            if (triple.a != null) {
+                e.setFinalState(triple.a);
+            }
+            if (triple.c != null && !e.getLevel().isClientSide()) {
+                Block.popResourceFromFace(e.getContext().getLevel(), e.getPos(), e.getContext().getClickedFace(), new ItemStack(triple.c));
+            }
+        } else if (Config.CLEAR_TILLING.get()) {
+            e.setFinalState(null);
+        }
+    }
+
+    @SubscribeEvent
+    static void entityJoinWorld(EntityJoinLevelEvent e) {
+        if (e.getEntity() instanceof Mob mob) {
+            if (Config.ENTITY_ATTRIBUTES.containsKey(mob.getType())) {
+                for (Attribute attribute : Config.ENTITY_ATTRIBUTES.get(mob.getType()).keySet()) {
+                    double value = Config.ENTITY_ATTRIBUTES.get(mob.getType()).get(attribute);
+                    AttributeInstance instance = mob.getAttributes().getInstance(attribute);
+                    if (instance == null) {
+                        Logger.error("Entity " + ForgeRegistries.ENTITY_TYPES.getKey(mob.getType()).toString() + " doesn't have an attribute " + ForgeRegistries.ATTRIBUTES.getKey(attribute).toString() + " that could be set");
+                    } else {
+                        instance.setBaseValue(value);
+                        if (attribute == Attributes.MAX_HEALTH) {
+                            mob.setHealth(mob.getMaxHealth());
+                        }
                     }
                 }
             }
-            mob.getPersistentData().putBoolean("alreadyAppliedAttributes", true);
         }
     }
 }

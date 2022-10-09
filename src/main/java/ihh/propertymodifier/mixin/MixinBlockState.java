@@ -20,14 +20,20 @@ public abstract class MixinBlockState extends BlockBehaviour.BlockStateBase {
 
     @Inject(at = @At("RETURN"), method = "<init>(Lnet/minecraft/world/level/block/Block;Lcom/google/common/collect/ImmutableMap;Lcom/mojang/serialization/MapCodec;)V")
     private void initMixinBlockState(Block block, ImmutableMap<Property<?>, Comparable<?>> propertyValueMap, MapCodec<BlockState> stateCodec, CallbackInfo callback) {
-        if (Config.MIXIN_DESTROY_TIME.containsKey(getBlock())) {
-            destroySpeed = Config.MIXIN_DESTROY_TIME.get(getBlock());
+        if (Config.DESTROY_TIME_STATES.containsKey(asState())) {
+            destroySpeed = Config.DESTROY_TIME_STATES.get(asState());
+        } else if (Config.DESTROY_TIME_BLOCKS.containsKey(getBlock())) {
+            destroySpeed = Config.DESTROY_TIME_BLOCKS.get(getBlock());
         }
-        if (Config.MIXIN_LIGHT_EMISSION.containsKey(getBlock())) {
-            lightEmission = Config.MIXIN_LIGHT_EMISSION.get(getBlock());
+        if (Config.LIGHT_EMISSION_STATES.containsKey(asState())) {
+            lightEmission = Config.LIGHT_EMISSION_STATES.get(asState());
+        } else if (Config.LIGHT_EMISSION_BLOCKS.containsKey(getBlock())) {
+            lightEmission = Config.LIGHT_EMISSION_BLOCKS.get(getBlock());
         }
-        if (Config.MIXIN_REQUIRES_TOOL.containsKey(getBlock())) {
-            requiresCorrectToolForDrops = Config.MIXIN_REQUIRES_TOOL.get(getBlock());
+        if (Config.REQUIRES_TOOL_STATES.containsKey(asState())) {
+            requiresCorrectToolForDrops = Config.REQUIRES_TOOL_STATES.get(asState());
+        } else if (Config.REQUIRES_TOOL_BLOCKS.containsKey(getBlock())) {
+            requiresCorrectToolForDrops = Config.REQUIRES_TOOL_BLOCKS.get(getBlock());
         }
     }
 }
