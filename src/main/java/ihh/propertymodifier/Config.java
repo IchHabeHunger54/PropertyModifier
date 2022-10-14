@@ -139,8 +139,8 @@ public final class Config {
         ITEM_GROUP_BACKGROUND = ConfigHelper.define(builder.comment("Set an alternative background for an item group. Must be a valid resource location. Example (without the leading #):", "minecraft:textures/gui/container/creative_inventory/tab_inventory.png"), "background", Codec.unboundedMap(Codec.STRING, ResourceLocation.CODEC), Map.of("test", new ResourceLocation("missingno")));
         ITEM_GROUP_ENCHANTMENTS = ConfigHelper.define(builder.comment("Set the enchantment categories for an item group. Must be a list of valid enchantment category names. Use [] for no enchantment groups (this is the default for newly-created groups). Example (without the leading #):", "[\"vanishable\", \"breakable\", \"digger\"]", "Default enchantment groups (mods may add more!): \"armor\", \"armor_feet\", \"armor_legs\", \"armor_chest\", \"armor_head\", \"weapon\", \"digger\", \"fishing_rod\", \"trident\", \"breakable\", \"bow\", \"wearable\", \"crossbow\", \"vanishable\""), "enchantments", Codec.unboundedMap(Codec.STRING, Codec.list(Codec.STRING)), Map.of("test", new ArrayList<>()));
         REMOVE_EMPTY_ITEM_GROUPS = builder.comment("Whether to remove empty item groups or not.").define("remove_empty", true);
-        SORT_ITEM_GROUPS = builder.comment("Whether to sort all item groups or not.").define("sort", true);
-        FORCE_REMOVE_ITEM_GROUPS = builder.comment("A list of groups that should be removed under all circumstances. Cannot remove \"hotbar\", \"search\" and \"inventory\".").define("force_remove", List.of());
+        SORT_ITEM_GROUPS = builder.comment("Whether to sort all item groups or not.").define("sort", false);
+        FORCE_REMOVE_ITEM_GROUPS = builder.comment("A list of groups that should be removed under all circumstances. Cannot remove \"hotbar\", \"search\" and \"inventory\".").define("force_remove", new ArrayList<>());
         builder.pop();
         builder.comment("Set the respective values here by adding lines in the respective groups. Keys can be either a block (e.g. \"minecraft:stripped_birch_wood\"), a block regex (e.g. \"minecraft:.*_block\") or a blockstate definition (e.g. \"minecraft:grass_block[snowy=true]\"). Block regexes cannot contain the [] characters, as their presence will be interpreted as a blockstate definition instead.").push("blocks_and_blockstates");
         DESTROY_TIME = ConfigHelper.define(builder.comment("Set the destroy time for a block (state). Dirt has 0.5, stone has 1.5, obsidian has 50. -1 makes the block unbreakable. Examples (without the leading #):", "\"minecraft:grass_block[snowy=true]\" = 100", "\"minecraft:.*_planks\" = 100"), "destroy_time", Codec.unboundedMap(Codec.STRING, Codec.FLOAT), Map.of("test", 0f));
@@ -590,7 +590,7 @@ public final class Config {
         if (SORT_ITEM_GROUPS.get()) {
             temp.sort(Comparator.comparing(CreativeModeTab::getRecipeFolderName));
         }
-        while (temp.size() < 8) {
+        while (temp.size() < 9) {
             temp.add(new CreativeModeTab("missingno") {
                 @Override
                 public ItemStack makeIcon() {
