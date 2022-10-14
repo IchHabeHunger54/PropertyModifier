@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -66,6 +67,8 @@ public final class Config {
     private static final ConfigHelper.ConfigObject<Map<String, ResourceLocation>> ITEM_GROUP_BACKGROUND;
     private static final ConfigHelper.ConfigObject<Map<String, List<String>>> ITEM_GROUP_ENCHANTMENTS;
     private static final ForgeConfigSpec.BooleanValue REMOVE_EMPTY_ITEM_GROUPS;
+    private static final ForgeConfigSpec.BooleanValue SORT_ITEM_GROUPS;
+    private static final ForgeConfigSpec.ConfigValue<List<String>> FORCE_REMOVE_ITEM_GROUPS;
     private static final ConfigHelper.ConfigObject<Map<String, Float>> DESTROY_TIME;
     private static final ConfigHelper.ConfigObject<Map<String, Boolean>> REQUIRES_TOOL;
     private static final ConfigHelper.ConfigObject<Map<String, Integer>> LIGHT_EMISSION;
@@ -135,7 +138,9 @@ public final class Config {
         ITEM_GROUP_SEARCH = ConfigHelper.define(builder.comment("Set whether item groups should have a search bar or not. Must be true or false. Only works for tabs created by this mod. Example (without the leading #):", "test = true"), "search", Codec.unboundedMap(Codec.STRING, Codec.BOOL), Map.of("test", false));
         ITEM_GROUP_BACKGROUND = ConfigHelper.define(builder.comment("Set an alternative background for an item group. Must be a valid resource location. Example (without the leading #):", "minecraft:textures/gui/container/creative_inventory/tab_inventory.png"), "background", Codec.unboundedMap(Codec.STRING, ResourceLocation.CODEC), Map.of("test", new ResourceLocation("missingno")));
         ITEM_GROUP_ENCHANTMENTS = ConfigHelper.define(builder.comment("Set the enchantment categories for an item group. Must be a list of valid enchantment category names. Use [] for no enchantment groups (this is the default for newly-created groups). Example (without the leading #):", "[\"vanishable\", \"breakable\", \"digger\"]", "Default enchantment groups (mods may add more!): \"armor\", \"armor_feet\", \"armor_legs\", \"armor_chest\", \"armor_head\", \"weapon\", \"digger\", \"fishing_rod\", \"trident\", \"breakable\", \"bow\", \"wearable\", \"crossbow\", \"vanishable\""), "enchantments", Codec.unboundedMap(Codec.STRING, Codec.list(Codec.STRING)), Map.of("test", new ArrayList<>()));
-        REMOVE_EMPTY_ITEM_GROUPS = builder.comment("Whether to remove empty item groups or not. Note: Due to internal reasons, the group \"building_blocks\" will not be removed.").define("remove_empty", true);
+        REMOVE_EMPTY_ITEM_GROUPS = builder.comment("Whether to remove empty item groups or not.").define("remove_empty", true);
+        SORT_ITEM_GROUPS = builder.comment("Whether to sort all item groups or not.").define("sort", true);
+        FORCE_REMOVE_ITEM_GROUPS = builder.comment("A list of groups that should be removed under all circumstances. Cannot remove \"hotbar\", \"search\" and \"inventory\".").define("force_remove", List.of());
         builder.pop();
         builder.comment("Set the respective values here by adding lines in the respective groups. Keys can be either a block (e.g. \"minecraft:stripped_birch_wood\"), a block regex (e.g. \"minecraft:.*_block\") or a blockstate definition (e.g. \"minecraft:grass_block[snowy=true]\"). Block regexes cannot contain the [] characters, as their presence will be interpreted as a blockstate definition instead.").push("blocks_and_blockstates");
         DESTROY_TIME = ConfigHelper.define(builder.comment("Set the destroy time for a block (state). Dirt has 0.5, stone has 1.5, obsidian has 50. -1 makes the block unbreakable. Examples (without the leading #):", "\"minecraft:grass_block[snowy=true]\" = 100", "\"minecraft:.*_planks\" = 100"), "destroy_time", Codec.unboundedMap(Codec.STRING, Codec.FLOAT), Map.of("test", 0f));
@@ -217,7 +222,7 @@ public final class Config {
         ITEM_GROUP_BACKGROUND.get().forEach((k, v) -> getItemGroup(k).ifPresent(tab -> tab.setBackgroundImage(v)));
         ITEM_GROUP_ENCHANTMENTS.get().forEach((k, v) -> getItemGroup(k).ifPresent(tab -> tab.setEnchantmentCategories(v.stream().map(e -> {
             try {
-                return EnchantmentCategory.valueOf(e);
+                return EnchantmentCategory.valueOf(e.toUpperCase(Locale.ROOT));
             } catch (IllegalArgumentException ex) {
                 Logger.error("Could not find enchantment category " + k + " mentioned in entry \"" + k + "\" = " + v);
                 return null;
@@ -568,50 +573,50 @@ public final class Config {
                 Logger.error("Invalid attribute value " + array[1]);
             }
         });
+        List<CreativeModeTab> list = new ArrayList<>();
+        List<CreativeModeTab> temp = new ArrayList<>(List.of(CreativeModeTab.TABS));
+        temp.remove(CreativeModeTab.TAB_HOTBAR);
+        temp.remove(CreativeModeTab.TAB_SEARCH);
+        temp.remove(CreativeModeTab.TAB_INVENTORY);
         if (REMOVE_EMPTY_ITEM_GROUPS.get()) {
-            List<CreativeModeTab> list = new ArrayList<>();
-            List<CreativeModeTab> temp = new ArrayList<>(List.of(CreativeModeTab.TABS));
-            list.add(CreativeModeTab.TAB_BUILDING_BLOCKS);
-            temp.remove(CreativeModeTab.TAB_BUILDING_BLOCKS);
-            temp.remove(CreativeModeTab.TAB_HOTBAR);
-            temp.remove(CreativeModeTab.TAB_SEARCH);
-            temp.remove(CreativeModeTab.TAB_INVENTORY);
             temp.removeIf(e -> {
+                if (FORCE_REMOVE_ITEM_GROUPS.get().contains(e.getRecipeFolderName())) return true;
                 for (Item item : ForgeRegistries.ITEMS.getValues()) {
-                    if (item.category == e) {
-                        return false;
-                    }
+                    if (item.category == e) return false;
                 }
                 return true;
             });
-            while (temp.size() < 8) {
-                temp.add(new CreativeModeTab("missingno") {
-                    @Override
-                    public ItemStack makeIcon() {
-                        return ItemStack.EMPTY;
-                    }
-                }.hideTitle());
-            }
-            for (int i = 0; i < 3; i++) {
-                list.add(temp.get(0));
-                temp.remove(temp.get(0));
-            }
-            list.add(CreativeModeTab.TAB_HOTBAR);
-            list.add(CreativeModeTab.TAB_SEARCH);
-            for (int i = 0; i < 5; i++) {
-                list.add(temp.get(0));
-                temp.remove(temp.get(0));
-            }
-            list.add(CreativeModeTab.TAB_INVENTORY);
-            while (temp.size() > 0) {
-                list.add(temp.get(0));
-                temp.remove(temp.get(0));
-            }
-            for (int i = 0; i < list.size(); i++) {
-                list.get(i).id = i;
-            }
-            CreativeModeTab.TABS = list.toArray(new CreativeModeTab[0]);
         }
+        if (SORT_ITEM_GROUPS.get()) {
+            temp.sort(Comparator.comparing(CreativeModeTab::getRecipeFolderName));
+        }
+        while (temp.size() < 8) {
+            temp.add(new CreativeModeTab("missingno") {
+                @Override
+                public ItemStack makeIcon() {
+                    return ItemStack.EMPTY;
+                }
+            }.hideTitle());
+        }
+        for (int i = 0; i < 4; i++) {
+            list.add(temp.get(0));
+            temp.remove(temp.get(0));
+        }
+        list.add(CreativeModeTab.TAB_HOTBAR);
+        list.add(CreativeModeTab.TAB_SEARCH);
+        for (int i = 0; i < 5; i++) {
+            list.add(temp.get(0));
+            temp.remove(temp.get(0));
+        }
+        list.add(CreativeModeTab.TAB_INVENTORY);
+        while (temp.size() > 0) {
+            list.add(temp.get(0));
+            temp.remove(temp.get(0));
+        }
+        for (int i = 0; i < list.size(); i++) {
+            list.get(i).id = i;
+        }
+        CreativeModeTab.TABS = list.toArray(new CreativeModeTab[0]);
         generate();
     }
 
