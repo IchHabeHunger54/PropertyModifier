@@ -1,22 +1,57 @@
 package ihh.propertymodifier;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.ToolActions;
+import net.minecraftforge.event.ItemAttributeModifierEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.util.Collection;
+
 @Mod.EventBusSubscriber(modid = PropertyModifier.MOD_ID)
 public final class EventHandler {
+    @SubscribeEvent
+    static void itemAttributeModifier(ItemAttributeModifierEvent e) {
+        if (e.getSlotType() != EquipmentSlot.MAINHAND) return;
+        Multimap<Attribute, AttributeModifier> newMap = Config.MODIFIERS.get(e.getItemStack().getItem());
+        if (newMap != null) {
+            Multimap<Attribute, AttributeModifier> oldMap = e.getOriginalModifiers();
+            Multimap<Attribute, AttributeModifier> result = HashMultimap.create();
+            for (Attribute attribute : newMap.keys()) {
+                Collection<AttributeModifier> collection = result.get(attribute);
+                collection.addAll(newMap.get(attribute));
+                result.putAll(attribute, collection);
+            }
+            for (Attribute attribute : oldMap.keys()) {
+                Collection<AttributeModifier> collection = result.get(attribute);
+                if (!result.containsKey(attribute)) {
+                    collection.addAll(oldMap.get(attribute));
+                    result.putAll(attribute, collection);
+                }
+            }
+            e.clearModifiers();
+            for (Attribute attribute : result.keys()) {
+                for (AttributeModifier modifier : result.get(attribute)) {
+                    e.addModifier(attribute, modifier);
+                }
+            }
+        }
+    }
+
     @SubscribeEvent
     static void blockToolModification(BlockEvent.BlockToolModificationEvent e) {
         Block block = e.getContext().getLevel().getBlockState(e.getPos()).getBlock();

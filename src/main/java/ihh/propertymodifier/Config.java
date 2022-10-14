@@ -10,6 +10,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -109,6 +110,7 @@ public final class Config {
     public static Map<Block, Integer> LIGHT_EMISSION_BLOCKS = new HashMap<>();
     public static Map<Item, Integer> ENCHANTMENT_VALUES = new HashMap<>();
     public static Map<Item, Lazy<Ingredient>> REPAIR_MATERIALS = new HashMap<>();
+    static Map<Item, Multimap<Attribute, AttributeModifier>> MODIFIERS = new HashMap<>();
     static Map<Block, BlockState> AXE_STRIPPING = new HashMap<>();
     static Map<Block, BlockState> SHOVEL_FLATTENING = new HashMap<>();
     static Map<Block, Triple<BlockState, Boolean, Item>> HOE_TILLING = new HashMap<>();
@@ -431,9 +433,7 @@ public final class Config {
         ATTACK_DAMAGE.get().forEach(parseItemsIntoMap(attackDamage));
         for (Item item : attackDamage.keySet()) {
             float value = attackDamage.get(item);
-            if (!(item instanceof DiggerItem || item instanceof SwordItem || item instanceof TridentItem)) {
-                Logger.error(item + " is not a tool or weapon item and thus cannot have its attack damage modified");
-            } else if (value < 0) {
+            if (value < 0) {
                 Logger.error("Invalid attack damage value " + value);
             } else {
                 Pair<Float, Float> pair = weapons.getOrDefault(item, new Pair<>(null, null));
@@ -445,9 +445,7 @@ public final class Config {
         ATTACK_SPEED.get().forEach(parseItemsIntoMap(attackSpeed));
         for (Item item : attackSpeed.keySet()) {
             float value = attackSpeed.get(item);
-            if (!(item instanceof DiggerItem || item instanceof SwordItem || item instanceof TridentItem)) {
-                Logger.error(item + " is not a tool or weapon item and thus cannot have its attack speed modified");
-            } else if (value < 0) {
+            if (value < 0) {
                 Logger.error("Invalid attack speed value " + value);
             } else {
                 Pair<Float, Float> pair = weapons.getOrDefault(item, new Pair<>(null, null));
@@ -458,18 +456,15 @@ public final class Config {
         for (Item item : weapons.keySet()) {
             Float damage = weapons.get(item).a;
             Float speed = weapons.get(item).b;
+            MODIFIERS.put(item, createToolAttributes(item.getDefaultAttributeModifiers(EquipmentSlot.MAINHAND), damage, speed));
             if (item instanceof DiggerItem digger) {
-                digger.defaultModifiers = createToolAttributes(digger.defaultModifiers, damage, speed);
                 if (damage != null) {
                     digger.attackDamageBaseline = damage;
                 }
             } else if (item instanceof SwordItem sword) {
-                sword.defaultModifiers = createToolAttributes(sword.defaultModifiers, damage, speed);
                 if (damage != null) {
                     sword.attackDamage = damage;
                 }
-            } else if (item instanceof TridentItem trident) {
-                trident.defaultModifiers = createToolAttributes(trident.defaultModifiers, damage, speed);
             }
         }
         Map<Enchantment, Enchantment.Rarity> enchantmentRarity = new HashMap<>();
