@@ -1,6 +1,7 @@
 package ihh.propertymodifier;
 
 import com.mojang.datafixers.util.Function4;
+import com.mojang.datafixers.util.Pair;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -69,8 +70,8 @@ public final class ConfigUtil {
         return array;
     }
 
-    public static HashMap<EntityType<?>, Map<Attribute, List<AttributeModifier>>> parseAttributeList(ForgeConfigSpec.ConfigValue<List<? extends String>> config) {
-        HashMap<EntityType<?>, Map<Attribute, List<AttributeModifier>>> result = new HashMap<>();
+    public static HashMap<EntityType<?>, Map<Attribute, Pair<AttributeModifier.Operation, Double>>> parseAttributeList(ForgeConfigSpec.ConfigValue<List<? extends String>> config) {
+        HashMap<EntityType<?>, Map<Attribute, Pair<AttributeModifier.Operation, Double>>> result = new HashMap<>();
         for (String s : config.get()) {
             String[] array = split(s, 4, config);
             if (array == null) continue;
@@ -79,11 +80,8 @@ public final class ConfigUtil {
             Float value = ParsingUtil.parseFloat(array[2], s, "entity.modifiers", e -> true);
             Integer op = ParsingUtil.parseInt(array[3], s, "entity.modifiers", e -> e > -1 && e < 3);
             if (type == null || attribute == null || value == null || op == null) continue;
-            AttributeModifier.Operation operation = AttributeModifier.Operation.fromValue(op);
-            Map<Attribute, List<AttributeModifier>> modifierMap = result.getOrDefault(type, new HashMap<>());
-            List<AttributeModifier> modifiers = modifierMap.getOrDefault(attribute, new ArrayList<>());
-            modifiers.add(new AttributeModifier(attribute.getDescriptionId(), value, operation));
-            modifierMap.put(attribute, modifiers);
+            Map<Attribute, Pair<AttributeModifier.Operation, Double>> modifierMap = result.getOrDefault(type, new HashMap<>());
+            modifierMap.put(attribute, Pair.of(AttributeModifier.Operation.fromValue(op), Double.valueOf(value)));
             result.put(type, modifierMap);
         }
         return result;

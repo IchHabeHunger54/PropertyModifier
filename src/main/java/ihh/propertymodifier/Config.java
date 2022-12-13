@@ -2,6 +2,7 @@ package ihh.propertymodifier;
 
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.Object2FloatMap;
 import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
@@ -35,10 +36,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.util.Lazy;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -54,19 +58,14 @@ public final class Config {
     public static final Map<Block, Boolean> MIXIN_REQUIRES_TOOL = new HashMap<>();
     public static final Map<Item, Integer> MIXIN_ENCHANTMENT_VALUE = new HashMap<>();
     public static final Map<Item, Lazy<Ingredient>> MIXIN_REPAIR_ITEM = new HashMap<>();
+    private static final AttributeModifier EMPTY_MODIFIER = new AttributeModifier("Property Modifier empty modifier", 0, AttributeModifier.Operation.ADDITION);
     private static final Map<Block, Properties.Block> BLOCKS = new LinkedHashMap<>();
     private static final Map<Item, Properties.Item> ITEMS = new LinkedHashMap<>();
     private static final Map<Enchantment, Properties.Enchantment> ENCHANTMENTS = new LinkedHashMap<>();
     private static final Map<CreativeModeTab, List<EnchantmentCategory>> ENCHANTMENT_GROUPS = new LinkedHashMap<>();
-    public static Map<EntityType<?>, Map<Attribute, List<AttributeModifier>>> MODIFIERS = new HashMap<>();
-    static ForgeConfigSpec SPEC;
-    static ForgeConfigSpec.BooleanValue LOG_SUCCESSFUL;
-    static ForgeConfigSpec.BooleanValue LOG_ERRORS;
-    static ForgeConfigSpec.BooleanValue AXE_CLEAR;
-    static ForgeConfigSpec.BooleanValue SHOVEL_CLEAR;
-    static ForgeConfigSpec.BooleanValue HOE_CLEAR;
-    static ForgeConfigSpec.IntValue DEFAULT_ENCHANTMENT_VALUE;
     private static final ForgeConfigSpec.BooleanValue REMOVE_EMPTY_ITEM_GROUPS;
+    private static final ForgeConfigSpec.BooleanValue SORT_ITEM_GROUPS;
+    private static final ForgeConfigSpec.ConfigValue<List<String>> FORCE_REMOVE_ITEM_GROUPS;
     private static final ForgeConfigSpec.BooleanValue DUMP_BLOCKS;
     private static final ForgeConfigSpec.BooleanValue DUMP_BLOCKS_AFTER;
     private static final ForgeConfigSpec.BooleanValue DUMP_BLOCKS_NON_DEFAULT;
@@ -116,6 +115,17 @@ public final class Config {
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> SHOVEL_BLOCKS;
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> HOE_BLOCKS;
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> ENTITY_MODIFIERS;
+    public static Map<Block, Block> AXE_STRIPPING = new HashMap<>();
+    public static Map<Block, Block> SHOVEL_FLATTENING = new HashMap<>();
+    public static Map<Block, Block> HOE_TILLING = new HashMap<>();
+    public static Map<EntityType<?>, Map<Attribute, Pair<AttributeModifier.Operation, Double>>> MODIFIERS = new HashMap<>();
+    static ForgeConfigSpec SPEC;
+    static ForgeConfigSpec.BooleanValue LOG_SUCCESSFUL;
+    static ForgeConfigSpec.BooleanValue LOG_ERRORS;
+    static ForgeConfigSpec.BooleanValue AXE_CLEAR;
+    static ForgeConfigSpec.BooleanValue SHOVEL_CLEAR;
+    static ForgeConfigSpec.BooleanValue HOE_CLEAR;
+    static ForgeConfigSpec.IntValue DEFAULT_ENCHANTMENT_VALUE;
     private static boolean searchReload = false;
 
     static {
@@ -127,6 +137,8 @@ public final class Config {
         builder.push("item_groups");
         ITEM_GROUP = builder.comment("Define new item groups. Format is \"id;icon\", with icon being an item id. Will run before the below stuff, allowing you to use these groups below. Note that you need to set a translation using a resource pack, otherwise an itemGroup.<id> translation key will appear. Do not use \"none\" as a name, as this is the key used to remove an item from any group.").define("item_group", new ArrayList<>());
         REMOVE_EMPTY_ITEM_GROUPS = builder.comment("Removes item groups that have no items, including empty ones created by this mod. Runs after the below stuff, clearing up any empty groups left from moving all items out of them.").define("remove_empty_item_groups", true);
+        SORT_ITEM_GROUPS = builder.comment("Whether to sort all item groups or not.").define("sort", false);
+        FORCE_REMOVE_ITEM_GROUPS = builder.comment("A list of groups that should be removed under all circumstances. Cannot remove \"hotbar\", \"search\" and \"inventory\".").define("force_remove", new ArrayList<>());
         builder.pop();
         builder.comment("Dumps all corresponding values with their changeable properties into the logs. Dumping tilling transitions or villager trades is impossible code-wise, hence they are missing in this list.").push("dump");
         DUMP_BLOCKS = builder.comment("Dump blocks BEFORE applying the changes.").define("dump_blocks", false);
@@ -448,56 +460,41 @@ public final class Config {
                 if (armorprop.KNOCKBACK_RESISTANCE != null) {
                     armoritem.knockbackResistance = armorprop.KNOCKBACK_RESISTANCE;
                 }
-                if (armorprop.ARMOR != null || armorprop.TOUGHNESS != null || armorprop.KNOCKBACK_RESISTANCE != null) {
-                    ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
-                    UUID uuid = ArmorItem.ARMOR_MODIFIER_UUID_PER_SLOT[armoritem.getSlot().getIndex()];
-                    if (armoritem.defense > 0) {
-                        builder.put(Attributes.ARMOR, new AttributeModifier(uuid, "Armor modifier", armoritem.defense, AttributeModifier.Operation.ADDITION));
-                    }
-                    if (armoritem.toughness > 0) {
-                        builder.put(Attributes.ARMOR_TOUGHNESS, new AttributeModifier(uuid, "Armor toughness", armoritem.toughness, AttributeModifier.Operation.ADDITION));
-                    }
-                    if (armoritem.knockbackResistance > 0) {
-                        builder.put(Attributes.KNOCKBACK_RESISTANCE, new AttributeModifier(uuid, "Armor knockback resistance", armoritem.knockbackResistance, AttributeModifier.Operation.ADDITION));
-                    }
-                    armoritem.defaultModifiers = builder.build();
-                }
-            } else if (item instanceof TieredItem toolitem) {
-                Properties.Tool toolprop = (Properties.Tool) prop;
-                if (toolprop.EFFICIENCY != null && toolitem instanceof DiggerItem) {
-                    ((DiggerItem) toolitem).speed = toolprop.EFFICIENCY;
-                }
-                if (toolprop.ATTACK_DAMAGE != null || toolprop.ATTACK_SPEED != null) {
-                    ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
-                    if (toolitem instanceof DiggerItem tool) {
-                        AttributeModifier speedMod = tool.defaultModifiers.get(Attributes.ATTACK_SPEED).stream().findFirst().orElse(null);
-                        double speed = toolprop.ATTACK_SPEED != null ? toolprop.ATTACK_SPEED - 4 : speedMod != null ? speedMod.getAmount() : 0;
-                        if (toolprop.ATTACK_DAMAGE != null) {
-                            tool.attackDamageBaseline = toolprop.ATTACK_DAMAGE - 1;
-                        }
-                        builder.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_UUID, "Tool modifier", tool.attackDamageBaseline, AttributeModifier.Operation.ADDITION));
-                        builder.put(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_UUID, "Tool modifier", speed, AttributeModifier.Operation.ADDITION));
-                        tool.defaultModifiers = builder.build();
-                    }
-                    if (toolitem instanceof SwordItem sword) {
-                        AttributeModifier speedMod = sword.defaultModifiers.get(Attributes.ATTACK_SPEED).stream().findFirst().orElse(null);
-                        double speed = toolprop.ATTACK_SPEED != null ? toolprop.ATTACK_SPEED - 4 : speedMod != null ? speedMod.getAmount() : 0;
-                        if (toolprop.ATTACK_DAMAGE != null) {
-                            sword.attackDamage = toolprop.ATTACK_DAMAGE - 1;
-                        }
-                        builder.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_UUID, "Tool modifier", sword.attackDamage, AttributeModifier.Operation.ADDITION));
-                        builder.put(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_UUID, "Tool modifier", speed, AttributeModifier.Operation.ADDITION));
-                        sword.defaultModifiers = builder.build();
-                    }
-                }
-            } else if (item instanceof TridentItem trident) {
-                Properties.Tool toolprop = (Properties.Tool) prop;
-                AttributeModifier damageMod = trident.defaultModifiers.get(Attributes.ATTACK_DAMAGE).stream().findFirst().orElse(null);
-                AttributeModifier speedMod = trident.defaultModifiers.get(Attributes.ATTACK_SPEED).stream().findFirst().orElse(null);
                 ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
-                builder.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_UUID, "Tool modifier", toolprop.ATTACK_DAMAGE != null ? toolprop.ATTACK_DAMAGE - 4 : damageMod != null ? damageMod.getAmount() : 0, AttributeModifier.Operation.ADDITION));
-                builder.put(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_UUID, "Tool modifier", toolprop.ATTACK_SPEED != null ? toolprop.ATTACK_SPEED - 4 : speedMod != null ? speedMod.getAmount() : 0, AttributeModifier.Operation.ADDITION));
-                trident.defaultModifiers = builder.build();
+                for (Attribute attribute : armoritem.defaultModifiers.keys()) {
+                    if (attribute != Attributes.ARMOR && attribute != Attributes.ARMOR_TOUGHNESS && attribute != Attributes.KNOCKBACK_RESISTANCE) {
+                        builder.putAll(attribute, armoritem.defaultModifiers.get(attribute));
+                    }
+                }
+                Pair<AttributeModifier, Double> oldDefense = getAttributeValue(Attributes.ARMOR, armoritem.defaultModifiers);
+                Pair<AttributeModifier, Double> oldToughness = getAttributeValue(Attributes.ARMOR_TOUGHNESS, armoritem.defaultModifiers);
+                Pair<AttributeModifier, Double> oldKnockbackResistance = getAttributeValue(Attributes.KNOCKBACK_RESISTANCE, armoritem.defaultModifiers);
+                builder.put(Attributes.ARMOR, new AttributeModifier(oldDefense.getFirst().getId(), oldDefense.getFirst().getName(), armorprop.ARMOR != null ? armorprop.ARMOR : oldDefense.getSecond(), oldDefense.getFirst().getOperation()));
+                builder.put(Attributes.ARMOR_TOUGHNESS, new AttributeModifier(oldToughness.getFirst().getId(), oldToughness.getFirst().getName(), armorprop.TOUGHNESS != null ? armorprop.TOUGHNESS : oldToughness.getSecond(), oldToughness.getFirst().getOperation()));
+                builder.put(Attributes.KNOCKBACK_RESISTANCE, new AttributeModifier(oldKnockbackResistance.getFirst().getId(), oldKnockbackResistance.getFirst().getName(), armorprop.KNOCKBACK_RESISTANCE != null ? armorprop.KNOCKBACK_RESISTANCE / 10f : oldKnockbackResistance.getSecond(), oldKnockbackResistance.getFirst().getOperation()));
+                armoritem.defaultModifiers = builder.build();
+            }
+            if (item instanceof TieredItem || item instanceof TridentItem) {
+                Properties.Tool toolprop = (Properties.Tool) prop;
+                Float damage = toolprop.ATTACK_DAMAGE;
+                Float speed = toolprop.ATTACK_SPEED;
+                Float efficiency = toolprop.EFFICIENCY;
+                if (item instanceof DiggerItem digger) {
+                    if (efficiency != null) {
+                        digger.speed = efficiency;
+                    }
+                    digger.defaultModifiers = createToolAttributes(digger.defaultModifiers, damage, speed);
+                    if (damage != null) {
+                        digger.attackDamageBaseline = damage;
+                    }
+                } else if (item instanceof SwordItem sword) {
+                    sword.defaultModifiers = createToolAttributes(sword.defaultModifiers, damage, speed);
+                    if (damage != null) {
+                        sword.attackDamage = damage;
+                    }
+                } else if (item instanceof TridentItem trident) {
+                    trident.defaultModifiers = createToolAttributes(trident.defaultModifiers, damage, speed);
+                }
             }
         }
         for (Enchantment enchantment : ENCHANTMENTS.keySet()) {
@@ -514,59 +511,55 @@ public final class Config {
         for (CreativeModeTab group : ENCHANTMENT_GROUPS.keySet()) {
             group.setEnchantmentCategories(ENCHANTMENT_GROUPS.get(group).toArray(new EnchantmentCategory[0]));
         }
+        List<CreativeModeTab> list = new ArrayList<>();
+        List<CreativeModeTab> temp = new ArrayList<>(List.of(CreativeModeTab.TABS));
+        temp.remove(CreativeModeTab.TAB_HOTBAR);
+        temp.remove(CreativeModeTab.TAB_SEARCH);
+        temp.remove(CreativeModeTab.TAB_INVENTORY);
         if (REMOVE_EMPTY_ITEM_GROUPS.get()) {
-            List<CreativeModeTab> groups = Lists.newArrayList(CreativeModeTab.TABS);
-            List<CreativeModeTab> result = Lists.newArrayList(CreativeModeTab.TABS);
-            for (CreativeModeTab group : groups) {
-                if (group.getEnchantmentCategories().length > 0) continue;
-                boolean b = false;
-                for (Item item : ForgeRegistries.ITEMS) {
-                    if (item.category == group) {
-                        b = true;
-                        break;
-                    }
+            temp.removeIf(e -> {
+                if (FORCE_REMOVE_ITEM_GROUPS.get().contains(e.getRecipeFolderName())) return true;
+                for (Item item : ForgeRegistries.ITEMS.getValues()) {
+                    if (item.category == e) return false;
                 }
-                if (!b) {
-                    result.remove(group);
-                }
-            }
-            while (result.size() < 4) {
-                result.add(null);
-            }
-            result.add(4, CreativeModeTab.TAB_HOTBAR);
-            result.add(5, CreativeModeTab.TAB_SEARCH);
-            while (result.size() < 11) {
-                result.add(null);
-            }
-            result.add(11, CreativeModeTab.TAB_INVENTORY);
-            for (int i = 0; i < result.size(); i++) {
-                CreativeModeTab group = result.get(i);
-                if (group != null) {
-                    group.id = i;
-                }
-            }
-            CreativeModeTab.TABS = result.toArray(new CreativeModeTab[0]);
-            CreativeModeTab.TAB_BUILDING_BLOCKS.id = 0;
+                return true;
+            });
         }
+        if (SORT_ITEM_GROUPS.get()) {
+            temp.sort(Comparator.comparing(CreativeModeTab::getRecipeFolderName));
+        }
+        while (temp.size() < 9) {
+            temp.add(new CreativeModeTab("none") {
+                @Override
+                @NotNull
+                public ItemStack makeIcon() {
+                    return ItemStack.EMPTY;
+                }
+            }.hideTitle());
+        }
+        for (int i = 0; i < 4; i++) {
+            list.add(temp.get(0));
+            temp.remove(temp.get(0));
+        }
+        list.add(CreativeModeTab.TAB_HOTBAR);
+        list.add(CreativeModeTab.TAB_SEARCH);
+        for (int i = 0; i < 5; i++) {
+            list.add(temp.get(0));
+            temp.remove(temp.get(0));
+        }
+        list.add(CreativeModeTab.TAB_INVENTORY);
+        while (temp.size() > 0) {
+            list.add(temp.get(0));
+            temp.remove(temp.get(0));
+        }
+        for (int i = 0; i < list.size(); i++) {
+            list.get(i).id = i;
+        }
+        CreativeModeTab.TABS = list.toArray(new CreativeModeTab[0]);
         Object2FloatMap<ItemLike> composterTransitions = new Object2FloatOpenHashMap<>(ComposterBlock.COMPOSTABLES);
-        Map<Block, Block> axeTransitions = new HashMap<>(AxeItem.STRIPPABLES);
-        Map<Block, BlockState> shovelTransitions = new HashMap<>(ShovelItem.FLATTENABLES);
-        Map<Block, Pair<Predicate<UseOnContext>, Consumer<UseOnContext>>> hoeTransitions = new HashMap<>(HoeItem.TILLABLES);
         ComposterBlock.COMPOSTABLES.clear();
         if (!COMPOSTER_CLEAR.get()) {
             ComposterBlock.COMPOSTABLES.putAll(composterTransitions);
-        }
-        AxeItem.STRIPPABLES = new HashMap<>();
-        if (!AXE_CLEAR.get()) {
-            AxeItem.STRIPPABLES.putAll(axeTransitions);
-        }
-        ShovelItem.FLATTENABLES.clear();
-        if (!SHOVEL_CLEAR.get()) {
-            ShovelItem.FLATTENABLES.putAll(shovelTransitions);
-        }
-        HoeItem.TILLABLES.clear();
-        if (!HOE_CLEAR.get()) {
-            HoeItem.TILLABLES.putAll(hoeTransitions);
         }
         List<Block> BLOCK_REGISTRY = new ArrayList<>(ForgeRegistries.BLOCKS.getValues());
         BLOCK_REGISTRY.removeIf(e -> e.properties.isAir);
@@ -577,29 +570,26 @@ public final class Config {
         }
         for (Map.Entry<Block, Block> entry : ConfigUtil.getMap(AXE_BLOCKS, BLOCK_REGISTRY, ParsingUtil::parseBlock, e -> true).entrySet()) {
             if (entry.getValue() != null) {
-                AxeItem.STRIPPABLES.put(entry.getKey(), entry.getValue());
+                AXE_STRIPPING.put(entry.getKey(), entry.getValue());
             }
         }
         for (Map.Entry<Block, Block> entry : ConfigUtil.getMap(SHOVEL_BLOCKS, BLOCK_REGISTRY, ParsingUtil::parseBlock, e -> true).entrySet()) {
             if (entry.getValue() != null) {
-                ShovelItem.FLATTENABLES.put(entry.getKey(), entry.getValue().defaultBlockState());
+                SHOVEL_FLATTENING.put(entry.getKey(), entry.getValue());
             }
         }
         for (Map.Entry<Block, Block> entry : ConfigUtil.getMap(HOE_BLOCKS, BLOCK_REGISTRY, ParsingUtil::parseBlock, e -> true).entrySet()) {
             if (entry.getValue() != null) {
-                HoeItem.TILLABLES.put(entry.getKey(), Pair.of(HoeItem::onlyIfAirAbove, HoeItem.changeIntoState(entry.getValue().defaultBlockState())));
+                HOE_TILLING.put(entry.getKey(), entry.getValue());
             }
         }
         MODIFIERS.clear();
-        for (Map.Entry<EntityType<?>, Map<Attribute, List<AttributeModifier>>> entry : ConfigUtil.parseAttributeList(ENTITY_MODIFIERS).entrySet()) {
+        for (Map.Entry<EntityType<?>, Map<Attribute, Pair<AttributeModifier.Operation, Double>>> entry : ConfigUtil.parseAttributeList(ENTITY_MODIFIERS).entrySet()) {
             for (Attribute attribute : entry.getValue().keySet()) {
-                for (AttributeModifier modifier : entry.getValue().get(attribute)) {
-                    Map<Attribute, List<AttributeModifier>> map = MODIFIERS.getOrDefault(entry.getKey(), new HashMap<>());
-                    List<AttributeModifier> list = map.getOrDefault(attribute, new ArrayList<>());
-                    list.add(modifier);
-                    map.put(attribute, list);
-                    MODIFIERS.put(entry.getKey(), map);
-                }
+                Pair<AttributeModifier.Operation, Double> modifier = entry.getValue().get(attribute);
+                Map<Attribute, Pair<AttributeModifier.Operation, Double>> map = MODIFIERS.getOrDefault(entry.getKey(), new HashMap<>());
+                map.put(attribute, modifier);
+                MODIFIERS.put(entry.getKey(), map);
             }
         }
         dump(DUMP_BLOCKS_AFTER.get(), DUMP_BLOCKS_AFTER_NON_DEFAULT.get(), DUMP_ITEMS_AFTER.get(), DUMP_ITEMS_AFTER_NON_DEFAULT.get(), DUMP_ENCHANTMENTS_AFTER.get(), DUMP_GROUPS_AFTER.get(), DUMP_COMPOSTER_AFTER.get(), DUMP_STRIPPING_AFTER.get(), DUMP_PATHING_AFTER.get());
@@ -702,5 +692,41 @@ public final class Config {
         if (searchReload) {
             Minecraft.getInstance().createSearchTrees();
         }
+    }
+
+    private static Multimap<Attribute, AttributeModifier> createToolAttributes(Multimap<Attribute, AttributeModifier> map, Float damage, Float speed) {
+        ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
+        for (Attribute attribute : map.keys()) {
+            if (attribute != Attributes.ATTACK_DAMAGE && attribute != Attributes.ATTACK_SPEED) {
+                builder.putAll(attribute, map.get(attribute));
+            }
+        }
+        Pair<AttributeModifier, Double> oldDamage = getAttributeValue(Attributes.ATTACK_DAMAGE, map);
+        Pair<AttributeModifier, Double> oldSpeed = getAttributeValue(Attributes.ATTACK_SPEED, map);
+        builder.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(oldDamage.getFirst().getId(), oldDamage.getFirst().getName(), (damage != null ? damage : oldDamage.getSecond()) - 1, oldDamage.getFirst().getOperation()));
+        builder.put(Attributes.ATTACK_SPEED, new AttributeModifier(oldSpeed.getFirst().getId(), oldSpeed.getFirst().getName(), (speed != null ? speed : oldSpeed.getSecond()) - 4, oldSpeed.getFirst().getOperation()));
+        return builder.build();
+    }
+
+    private static Pair<AttributeModifier, Double> getAttributeValue(Attribute attribute, Multimap<Attribute, AttributeModifier> map) {
+        Collection<AttributeModifier> collection = map.get(attribute);
+        double base = attribute.getDefaultValue();
+        double result = base;
+        for (AttributeModifier modifier : collection) {
+            if (modifier.getOperation() == AttributeModifier.Operation.ADDITION) {
+                result += modifier.getAmount();
+            }
+        }
+        for (AttributeModifier modifier : collection) {
+            if (modifier.getOperation() == AttributeModifier.Operation.MULTIPLY_BASE) {
+                result += base * modifier.getAmount();
+            }
+        }
+        for (AttributeModifier modifier : collection) {
+            if (modifier.getOperation() == AttributeModifier.Operation.MULTIPLY_TOTAL) {
+                result *= modifier.getAmount();
+            }
+        }
+        return new Pair<>(collection.stream().findFirst().orElse(EMPTY_MODIFIER), result);
     }
 }
