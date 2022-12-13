@@ -24,23 +24,20 @@ import java.util.List;
 public class MixinAnvilRecipeMaker {
     @Inject(at = @At("RETURN"), method = "getAnvilRecipes", cancellable = true, remap = false)
     private static void getAnvilRecipesMixin(IVanillaRecipeFactory vanillaRecipeFactory, IIngredientManager ingredientManager, CallbackInfoReturnable<List<IJeiAnvilRecipe>> callback) {
-        List<IJeiAnvilRecipe> original = new ArrayList<>(callback.getReturnValue());
         List<IJeiAnvilRecipe> result = new ArrayList<>();
         for (IJeiAnvilRecipe recipe : callback.getReturnValue()) {
             for (ItemStack stack : recipe.getLeftInputs()) {
                 if (Config.REPAIR_MATERIALS.containsKey(stack.getItem()) && recipe.getRightInputs().stream().map(ItemStack::getItem).noneMatch(e -> e == Items.ENCHANTED_BOOK)) {
                     result.add(vanillaRecipeFactory.createAnvilRecipe(recipe.getLeftInputs(), Arrays.stream(Config.REPAIR_MATERIALS.get(stack.getItem()).get().getItems()).toList(), recipe.getOutputs()));
-                    original.remove(recipe);
                 } else if (stack.is(Items.ELYTRA)) {
                     result.add(vanillaRecipeFactory.createAnvilRecipe(recipe.getLeftInputs(), Arrays.stream(Ingredient.of(PropertyModifier.ELYTRA_REPAIR_MATERIAL).getItems()).toList(), recipe.getOutputs()));
-                    original.remove(recipe);
                 } else if (stack.is(Items.SHIELD)) {
                     result.add(vanillaRecipeFactory.createAnvilRecipe(recipe.getLeftInputs(), Arrays.stream(Ingredient.of(PropertyModifier.SHIELD_REPAIR_MATERIAL).getItems()).toList(), recipe.getOutputs()));
-                    original.remove(recipe);
+                } else {
+                    result.add(recipe);
                 }
             }
         }
-        result.addAll(original);
         callback.setReturnValue(result);
     }
 }
