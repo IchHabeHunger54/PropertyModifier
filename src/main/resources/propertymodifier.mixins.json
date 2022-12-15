@@ -4,6 +4,7 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "propertymodifier.refmap.json",
   "mixins": [
+    "MixinAnvilMenu",
     "MixinArmorItem",
     "MixinBlockState",
     "MixinBlockStateBase",
