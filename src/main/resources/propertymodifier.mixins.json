@@ -5,7 +5,6 @@
   "refmap": "propertymodifier.refmap.json",
   "mixins": [
     "MixinAnvilMenu",
-    "MixinAnvilRecipeMaker",
     "MixinArmorItem",
     "MixinBlockState",
     "MixinBlockStateBase",

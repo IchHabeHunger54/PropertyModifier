@@ -66,10 +66,11 @@ dependencies {
     library fg.deobf("com.github.LlamaLad7:MixinExtras:${project.mixinextras_version}")
     annotationProcessor "com.github.LlamaLad7:MixinExtras:${project.mixinextras_version}"
     annotationProcessor "org.spongepowered:mixin:${project.mixin_version}:processor"
-    compileOnly fg.deobf("mezz.jei:jei-${project.mc_version}-forge:${project.jei_version}")
+    compileOnly fg.deobf("mezz.jei:jei-${project.mc_version}-common-api:${project.jei_version}")
+    compileOnly fg.deobf("mezz.jei:jei-${project.mc_version}-forge-api:${project.jei_version}")
     runtimeOnly fg.deobf("mezz.jei:jei-${project.mc_version}-forge:${project.jei_version}")
-    runtimeOnly fg.deobf("vazkii.autoreglib:AutoRegLib:${project.autoreglib_version}")
-    runtimeOnly fg.deobf("vazkii.quark:Quark:${project.quark_version}")
+    //runtimeOnly fg.deobf("vazkii.autoreglib:AutoRegLib:${project.autoreglib_version}")
+    //runtimeOnly fg.deobf("vazkii.quark:Quark:${project.quark_version}")
 }
 
 minecraft {
