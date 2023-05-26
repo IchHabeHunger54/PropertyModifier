@@ -28,13 +28,21 @@ apply plugin: 'idea'
 repositories {
     mavenLocal()
     mavenCentral()
-    maven {
-        name = 'Progwml6 maven'
-        url = 'https://dvs1.progwml6.com/files/maven/'
-    }
-    maven {
+    maven { //JEI
         name = 'ModMaven'
-        url = 'https://modmaven.k-4u.nl'
+        url = 'https://modmaven.dev'
+    }
+    maven { //MixinExtras
+        name = 'Jitpack'
+        url = 'https://jitpack.io'
+    }
+    maven { //Testing
+        name = 'Curse Maven'
+        url 'https://cursemaven.com'
+    }
+    maven { //Quark
+        name = 'BlameJared Maven'
+        url = 'https://maven.blamejared.com'
     }
 }
 
@@ -54,9 +62,14 @@ configurations {
 
 dependencies {
     minecraft "net.minecraftforge:forge:${project.mc_version}-${project.forge_version}"
-    annotationProcessor group: 'org.spongepowered', name: 'mixin', version: project.mixin_version, classifier: 'processor'
+    shade fg.deobf("com.github.LlamaLad7:MixinExtras:${project.mixinextras_version}")
+    library fg.deobf("com.github.LlamaLad7:MixinExtras:${project.mixinextras_version}")
+    annotationProcessor "com.github.LlamaLad7:MixinExtras:${project.mixinextras_version}"
+    annotationProcessor "org.spongepowered:mixin:${project.mixin_version}:processor"
     compileOnly fg.deobf("mezz.jei:jei-${project.mc_version}-forge:${project.jei_version}")
     runtimeOnly fg.deobf("mezz.jei:jei-${project.mc_version}-forge:${project.jei_version}")
+    runtimeOnly fg.deobf("vazkii.autoreglib:AutoRegLib:${project.autoreglib_version}")
+    runtimeOnly fg.deobf("vazkii.quark:Quark:${project.quark_version}")
 }
 
 minecraft {
@@ -151,6 +164,8 @@ jar.finalizedBy('reobfJar')
 shadowJar {
     archiveClassifier = ''
     configurations = [project.configurations.shade]
+    relocate 'com.llamalad7.mixinextras', "${project.group}.mixinextras"
+    mergeServiceFiles()
     finalizedBy 'reobfShadowJar'
 }
 
