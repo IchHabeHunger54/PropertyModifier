@@ -33,6 +33,7 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.util.Lazy;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -50,6 +51,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
+@SuppressWarnings("deprecation")
 public final class Config {
     static final ForgeConfigSpec SPEC;
     static final ForgeConfigSpec.BooleanValue LOG_SUCCESSFUL;
@@ -212,6 +214,7 @@ public final class Config {
         });
         tabs.forEach((k, v) -> new CreativeModeTab(k) {
             @Override
+            @NotNull
             public ItemStack makeIcon() {
                 return new ItemStack(v.a);
             }
@@ -543,14 +546,14 @@ public final class Config {
             }
         }
         ATTRIBUTES.get().forEach((k, v) -> {
-            List<EntityType<?>> types = ForgeRegistries.ENTITY_TYPES.getValues().stream().filter(e -> ForgeRegistries.ENTITY_TYPES.getKey(e).toString().matches(k)).toList();
+            List<EntityType<?>> types = ForgeRegistries.ENTITY_TYPES.getValues().stream().filter(e -> Objects.requireNonNull(ForgeRegistries.ENTITY_TYPES.getKey(e)).toString().matches(k)).toList();
             if (types.isEmpty()) {
                 Logger.error("Could not find entity type " + k);
                 return;
             }
             String[] array = v.split(";");
             if (array.length != 2) return;
-            List<Attribute> attributes = ForgeRegistries.ATTRIBUTES.getValues().stream().filter(e -> ForgeRegistries.ATTRIBUTES.getKey(e).toString().matches(array[0])).toList();
+            List<Attribute> attributes = ForgeRegistries.ATTRIBUTES.getValues().stream().filter(e -> Objects.requireNonNull(ForgeRegistries.ATTRIBUTES.getKey(e)).toString().matches(array[0])).toList();
             if (attributes.isEmpty()) {
                 Logger.error("Could not find attribute " + k);
                 return;
@@ -588,6 +591,7 @@ public final class Config {
         while (temp.size() < 9) {
             temp.add(new CreativeModeTab("missingno") {
                 @Override
+                @NotNull
                 public ItemStack makeIcon() {
                     return ItemStack.EMPTY;
                 }

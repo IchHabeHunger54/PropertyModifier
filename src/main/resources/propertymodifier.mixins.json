@@ -13,6 +13,5 @@
     "MixinShieldItem",
     "MixinTieredItem"
   ],
-  "minVersion": "0.8",
-  "plugin": "ihh.propertymodifier.mixin.PropertyModifierMixinConfigPlugin"
+  "minVersion": "0.8"
 }

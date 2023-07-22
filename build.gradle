@@ -9,17 +9,12 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath group: 'org.codehaus.groovy', name: 'groovy-all', version: '3.0.8', ext: 'pom'
-        classpath group: 'org.apache.maven', name: 'maven-plugin-api', version: '3.8.1'
         classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: "${project.forgegradle_version}", changing: true
         classpath group: 'org.spongepowered', name: 'mixingradle', version: "${project.mixingradle_version}", changing: true
         classpath group: 'org.parchmentmc', name: 'librarian', version: '1.+'
     }
 }
 
-plugins {
-    id 'com.github.johnrengelman.shadow' version '7.1.2'
-}
 apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'org.spongepowered.mixin'
 apply plugin: 'org.parchmentmc.librarian.forgegradle'
@@ -60,11 +55,14 @@ configurations {
     implementation.extendsFrom shade
 }
 
+jarJar.enable()
+
 dependencies {
     minecraft "net.minecraftforge:forge:${project.mc_version}-${project.forge_version}"
-    shade fg.deobf("com.github.LlamaLad7:MixinExtras:${project.mixinextras_version}")
-    library fg.deobf("com.github.LlamaLad7:MixinExtras:${project.mixinextras_version}")
-    annotationProcessor "com.github.LlamaLad7:MixinExtras:${project.mixinextras_version}"
+    implementation(annotationProcessor("com.github.llamalad7.mixinextras:mixinextras-common:${project.mixinextras_version}"))
+    implementation(jarJar("com.github.llamalad7.mixinextras:mixinextras-forge:${project.mixinextras_version}")) {
+        jarJar.ranged(it, "[${project.mixinextras_version},)")
+    }
     annotationProcessor "org.spongepowered:mixin:${project.mixin_version}:processor"
     compileOnly fg.deobf("mezz.jei:jei-${project.mc_version}-common-api:${project.jei_version}")
     compileOnly fg.deobf("mezz.jei:jei-${project.mc_version}-forge-api:${project.jei_version}")
@@ -161,20 +159,6 @@ jar {
     }
 }
 jar.finalizedBy('reobfJar')
-
-shadowJar {
-    archiveClassifier = ''
-    configurations = [project.configurations.shade]
-    relocate 'com.llamalad7.mixinextras', "${project.group}.mixinextras"
-    mergeServiceFiles()
-    finalizedBy 'reobfShadowJar'
-}
-
-assemble.dependsOn shadowJar
-
-reobf {
-    shadowJar {}
-}
 
 mixin {
     add sourceSets.main, "${project.mod_id}.refmap.json"

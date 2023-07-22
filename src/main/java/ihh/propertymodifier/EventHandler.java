@@ -21,6 +21,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.Collection;
+import java.util.Objects;
 
 @Mod.EventBusSubscriber(modid = PropertyModifier.MOD_ID)
 public final class EventHandler {
@@ -89,7 +90,7 @@ public final class EventHandler {
                     double value = Config.ENTITY_ATTRIBUTES.get(mob.getType()).get(attribute);
                     AttributeInstance instance = mob.getAttributes().getInstance(attribute);
                     if (instance == null) {
-                        Logger.error("Entity " + ForgeRegistries.ENTITY_TYPES.getKey(mob.getType()).toString() + " doesn't have an attribute " + ForgeRegistries.ATTRIBUTES.getKey(attribute).toString() + " that could be set");
+                        Logger.error("Entity " + Objects.requireNonNull(ForgeRegistries.ENTITY_TYPES.getKey(mob.getType())) + " doesn't have an attribute " + Objects.requireNonNull(ForgeRegistries.ATTRIBUTES.getKey(attribute)) + " that could be set");
                     } else {
                         instance.setBaseValue(value);
                         if (attribute == Attributes.MAX_HEALTH) {
